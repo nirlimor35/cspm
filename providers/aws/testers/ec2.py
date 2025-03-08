@@ -55,13 +55,13 @@ class Service(AWSTesters):
         self.autoscaling_client = client("autoscaling", self.region)
         self.all_tests, self.test_names = self._get_all_tests()
         self.describe_instances = None
-        self.describe_security_groups = None
+        # self.describe_security_groups = None
         self.describe_autoscaling_groups = None
 
     def _init_ec2(self):
         try:
             self.describe_instances = self.ec2_client.describe_instances()["Reservations"]
-            self.describe_security_groups = self.ec2_client.describe_security_groups()["SecurityGroups"]
+            # self.describe_security_groups = self.ec2_client.describe_security_groups()["SecurityGroups"]
             self.describe_autoscaling_groups = self.autoscaling_client.describe_auto_scaling_groups()[
                 "AutoScalingGroups"]
 
