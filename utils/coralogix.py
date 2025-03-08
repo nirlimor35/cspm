@@ -3,19 +3,19 @@ import requests
 
 
 class SendToCoralogix:
-    def __init__(self, logs_array: list, endpoint: str, api_key: str, application: str, subsystem: str):
-        self.logs_array = logs_array
+    def __init__(self, endpoint: str, api_key: str, application: str, subsystem: str):
         self.endpoint = endpoint
         self.api_key = api_key
         self.application = application
         self.subsystem = subsystem
 
-    def prepare_to_batch_send(self):
+    @staticmethod
+    def prepare_to_batch_send(logs_array):
         ready_to_send = {}
         counter = 0
         batch_num = 1
 
-        for log in self.logs_array:
+        for log in logs_array:
             if counter < 800:
                 if f"batch_{batch_num}" in ready_to_send:
                     ready_to_send[f"batch_{batch_num}"].append({"severity": 3, "text": log})
@@ -36,9 +36,6 @@ class SendToCoralogix:
                     counter += 1
         return ready_to_send
 
-    def log_send_singles(self):
-        pass
-
     def send_logs(self, cur_batch):
         data = {
             "applicationName": self.application,
@@ -56,19 +53,19 @@ class SendToCoralogix:
         )
         if not 199 < request.status_code < 299:
             print(
-                f"ERROR :: Failed to send logs to Coralogix - {request.status_code} - {request.text}")
+                f"⭕️ ERROR :: Failed to send logs to Coralogix - {request.status_code} - {request.text}")
             exit(2)
         else:
             return True
 
-    def main(self):
-        findings_batch = self.prepare_to_batch_send()
+    def send_bulk(self, logs_array: list):
+        findings_batch = self.prepare_to_batch_send(logs_array)
         sending_ok = False
         for batch_num, batch_value in findings_batch.items():
             try:
                 sending_ok = self.send_logs(batch_value)
             except Exception as e:
-                print(f"ERROR :: Failed to send logs to Coralogix - {e}")
+                print(f"⭕️ ERROR :: Failed to send logs to Coralogix - {e}")
                 exit(3)
         return sending_ok
 
