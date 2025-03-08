@@ -191,25 +191,26 @@ class Service(AWSTesters):
         return results
 
     def run(self):
-        self._init_ec2()
+        if self.region != "global":
+            self._init_ec2()
 
-        try:
-            results = []
-            for cur_test in self.all_tests:
-                cur_results = cur_test()
-                if type(cur_results) is list:
-                    for cur_result in cur_results:
-                        results.append(cur_result)
+            try:
+                results = []
+                for cur_test in self.all_tests:
+                    cur_results = cur_test()
+                    if type(cur_results) is list:
+                        for cur_result in cur_results:
+                            results.append(cur_result)
+                    else:
+                        results.append(cur_results)
+                if results and len(results) > 0:
+                    print(
+                        f"INFO :: {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
+                    self.shipper(results)
                 else:
-                    results.append(cur_results)
-            if results and len(results) > 0:
-                print(
-                    f"INFO :: {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
-                self.shipper(results)
-            else:
-                print(f"INFO :: {self.service_name} :: No logs found for region {self.region}")
+                    print(f"INFO :: {self.service_name} :: No logs found for region {self.region}")
 
-        except Exception as e:
-            if e:
-                print(f"⭕️ ERROR :: {self.service_name} :: {e}")
-                exit(8)
+            except Exception as e:
+                if e:
+                    print(f"⭕️ ERROR :: {self.service_name} :: {e}")
+                    exit(8)
