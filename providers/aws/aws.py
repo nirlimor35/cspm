@@ -24,7 +24,7 @@ class AWS:
 
 class AWSTesters:
     @staticmethod
-    def _generate_results(account_id, service, test_name, resource, region, issue_found, additional_data=None):
+    def _generate_results(account_id: str, service: str, test_name: str, resource: str, region: str, issue_found: bool, additional_data=None) -> dict:
         return {
             "account_id": account_id,
             "service": service,
