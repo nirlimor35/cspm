@@ -39,6 +39,35 @@ class Service(AWSTesters):
         else:
             print(f"⭕️ ERROR :: {self.service_name} :: Failed to find detector with id '{detector_id}'")
 
+    def _service_run_time_test(self, service, test_name):
+        results = []
+        if self.detector_ids and len(self.detector_ids):
+            for detector_id in self.detector_ids:
+                additional_data = {"detector_id": detector_id}
+                cur_detector = self._get_detector(detector_id)
+                if "Features" in cur_detector:
+                    for feature in cur_detector["Features"]:
+                        if feature["Name"] == "RUNTIME_MONITORING":
+                            if "AdditionalConfiguration" in feature:
+                                for additional_feature in feature["AdditionalConfiguration"]:
+                                    if additional_feature["Name"] == service:
+                                        if additional_feature["Status"] == "ENABLED":
+                                            results.append(self._generate_results(
+                                                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
+                                                False,
+                                                additional_data))
+                                        else:
+                                            results.append(self._generate_results(
+                                                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
+                                                True,
+                                                additional_data))
+        else:
+            results.append(self._generate_results(
+                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
+                True,
+                {"detector_id": "no detector found"}))
+        return results
+
     def test_guardduty_should_be_enabled(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
@@ -93,9 +122,14 @@ class Service(AWSTesters):
                     results.append(self._generate_results(
                         self.account_id, self.service_name, test_name, "GuardDuty", self.region, False,
                         additional_data))
+                else:
+                    results.append(self._generate_results(
+                        self.account_id, self.service_name, test_name, "GuardDuty", self.region, True))
         else:
             results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, "GuardDuty", self.region, True))
+                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
+                True,
+                {"detector_id": "no detector found"}))
         return results
 
     def test_runtime_monitoring_should_be_enabled(self):
@@ -117,85 +151,24 @@ class Service(AWSTesters):
                                 results.append(self._generate_results(
                                     self.account_id, self.service_name, test_name, "GuardDuty", self.region, True,
                                     additional_data))
+        else:
+            results.append(self._generate_results(
+                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
+                True,
+                {"detector_id": "no detector found"}))
         return results
 
     def test_ec2_runtime_monitoring_should_be_enabled(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
-
-        results = []
-        if self.detector_ids and len(self.detector_ids):
-            for detector_id in self.detector_ids:
-                additional_data = {"detector_id": detector_id}
-                cur_detector = self._get_detector(detector_id)
-                if "Features" in cur_detector:
-                    for feature in cur_detector["Features"]:
-                        if feature["Name"] == "RUNTIME_MONITORING":
-                            if "AdditionalConfiguration" in feature:
-                                for additional_feature in feature["AdditionalConfiguration"]:
-                                    if additional_feature["Name"] == "EC2_AGENT_MANAGEMENT":
-                                        if additional_feature["Status"] == "ENABLED":
-                                            results.append(self._generate_results(
-                                                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
-                                                False,
-                                                additional_data))
-                                        else:
-                                            results.append(self._generate_results(
-                                                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
-                                                True,
-                                                additional_data))
-        return results
+        return self._service_run_time_test("EC2_AGENT_MANAGEMENT", test_name)
 
     def test_ecs_runtime_monitoring_should_be_enabled(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
-
-        results = []
-        if self.detector_ids and len(self.detector_ids):
-            for detector_id in self.detector_ids:
-                additional_data = {"detector_id": detector_id}
-                cur_detector = self._get_detector(detector_id)
-                if "Features" in cur_detector:
-                    for feature in cur_detector["Features"]:
-                        if feature["Name"] == "RUNTIME_MONITORING":
-                            if "AdditionalConfiguration" in feature:
-                                for additional_feature in feature["AdditionalConfiguration"]:
-                                    if additional_feature["Name"] == "ECS_FARGATE_AGENT_MANAGEMENT":
-                                        if additional_feature["Status"] == "ENABLED":
-                                            results.append(self._generate_results(
-                                                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
-                                                False,
-                                                additional_data))
-                                        else:
-                                            results.append(self._generate_results(
-                                                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
-                                                True,
-                                                additional_data))
-        return results
+        return self._service_run_time_test("ECS_FARGATE_AGENT_MANAGEMENT", test_name)
 
     def test_eks_runtime_monitoring_should_be_enabled(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
-
-        results = []
-        if self.detector_ids and len(self.detector_ids):
-            for detector_id in self.detector_ids:
-                additional_data = {"detector_id": detector_id}
-                cur_detector = self._get_detector(detector_id)
-                if "Features" in cur_detector:
-                    for feature in cur_detector["Features"]:
-                        if feature["Name"] == "RUNTIME_MONITORING":
-                            if "AdditionalConfiguration" in feature:
-                                for additional_feature in feature["AdditionalConfiguration"]:
-                                    if additional_feature["Name"] == "EKS_ADDON_MANAGEMENT":
-                                        if additional_feature["Status"] == "ENABLED":
-                                            results.append(self._generate_results(
-                                                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
-                                                False,
-                                                additional_data))
-                                        else:
-                                            results.append(self._generate_results(
-                                                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
-                                                True,
-                                                additional_data))
-        return results
+        return self._service_run_time_test("EKS_ADDON_MANAGEMENT", test_name)
 
     def test_detectors_should_be_tagged(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
@@ -215,6 +188,11 @@ class Service(AWSTesters):
                         self.account_id, self.service_name, test_name, "GuardDuty", self.region,
                         True,
                         additional_data))
+        else:
+            results.append(self._generate_results(
+                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
+                True,
+                {"detector_id": "no detector found"}))
         return results
 
     def run(self):
