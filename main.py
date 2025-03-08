@@ -26,6 +26,8 @@ class CSPM:
             regions = [region.strip() for region in aws_regions_env.split(",")]
         else:
             regions = aws.get_available_regions(client=client)
+        if "global" not in regions:
+            regions.append("global")
         account_id = client("sts").get_caller_identity()["Account"]
         return client, regions, account_id
 
