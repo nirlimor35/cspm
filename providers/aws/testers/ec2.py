@@ -283,7 +283,6 @@ class Service(AWSTesters):
         return results
 
     def run(self):
-        import json
         if self.region != "global":
             self._init_ec2()
 
