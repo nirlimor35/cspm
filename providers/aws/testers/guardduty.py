@@ -2,19 +2,8 @@ import inspect
 from providers.aws.aws import AWSTesters
 
 """
-✅GuardDuty should be enabled
-✅GuardDuty S3 Protection should be enabled
-✅GuardDuty Runtime Monitoring should be enabled
-✅GuardDuty ECS Runtime Monitoring should be enabled
-✅GuardDuty EC2 Runtime Monitoring should be enabled
-✅GuardDuty EKS Runtime Monitoring should be enabled
-✅GuardDuty detectors should be tagged
-GuardDuty Lambda Protection should be enabled
-GuardDuty RDS Protection should be enabled
 GuardDuty filters should be tagged
 GuardDuty IPSets should be tagged
-GuardDuty EKS Audit Log Monitoring should be enabled
-GuardDuty Malware Protection for EC2 should be enabled
 """
 
 
@@ -67,6 +56,41 @@ class Service(AWSTesters):
                 True,
                 {"detector_id": "no detector found"}))
         return results
+
+    def _service_protection_test(self, service, test_name):
+        results = []
+        if self.detector_ids and len(self.detector_ids):
+            for detector_id in self.detector_ids:
+                additional_data = {"detector_id": detector_id}
+                cur_detector = self._get_detector(detector_id)
+                if "Features" in cur_detector:
+                    feature_names = [f["Name"] for f in cur_detector["Features"]]
+                    if "LAMBDA_NETWORK_LOGS" in feature_names:
+                        for feature in cur_detector["Features"]:
+
+                            if feature["Name"] == service:
+                                if feature["Status"] == "ENABLED":
+                                    feature["UpdatedAt"] = self._datetime_handler(feature["UpdatedAt"])
+                                    additional_data.update({"feature": feature})
+                                    results.append(self._generate_results(
+                                        self.account_id, self.service_name, test_name, "GuardDuty", self.region, False,
+                                        additional_data))
+                                else:
+                                    results.append(self._generate_results(
+                                        self.account_id, self.service_name, test_name, "GuardDuty", self.region, True,
+                                        additional_data))
+                    else:
+                        results.append(self._generate_results(
+                            self.account_id, self.service_name, test_name, "GuardDuty", self.region, True,
+                            additional_data))
+        return results
+    @staticmethod
+    def _datetime_handler(obj):
+        from datetime import datetime, timezone
+
+        if isinstance(obj, datetime):
+            return obj.astimezone(timezone.utc).isoformat()
+        raise TypeError(f"Type {type(obj)} not serializable")
 
     def test_guardduty_should_be_enabled(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
@@ -194,6 +218,22 @@ class Service(AWSTesters):
                 True,
                 {"detector_id": "no detector found"}))
         return results
+
+    def test_lambda_protection_should_be_enabled(self):
+        test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
+        return self._service_protection_test("LAMBDA_NETWORK_LOGS", test_name)
+
+    def test_rds_protection_should_be_enabled(self):
+        test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
+        return self._service_protection_test("RDS_LOGIN_EVENTS", test_name)
+
+    def test_eks_audit_logs_monitoring_should_be_enabled(self):
+        test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
+        return self._service_protection_test("EKS_AUDIT_LOGS", test_name)
+
+    def test_malware_protection_for_ec2_should_be_enabled(self):
+        test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
+        return self._service_protection_test("EBS_MALWARE_PROTECTION", test_name)
 
     def run(self):
         import json
