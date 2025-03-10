@@ -8,7 +8,7 @@ class Service(AWSTesters):
         self.account_id = account_id
         self.region = region
         self.shipper = shipper.send_bulk
-        self.iam_client = client("iam")
+        self.rds_client = client("rds")
 
     def run(self):
         if self.region != "global":
