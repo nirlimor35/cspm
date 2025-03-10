@@ -236,7 +236,6 @@ class Service(AWSTesters):
         return self._service_protection_test("EBS_MALWARE_PROTECTION", test_name)
 
     def run(self):
-        import json
         if self.region != "global":
             self._init_guardduty()
             try:
@@ -250,10 +249,9 @@ class Service(AWSTesters):
                     else:
                         results.append(cur_results)
                 if results and len(results) > 0:
-                    print(json.dumps(results, indent=2))
                     print(
                         f"INFO :: {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
-                    # self.shipper(results)
+                    self.shipper(results)
                 else:
                     print(f"INFO :: {self.service_name} :: No logs found for region {self.region}")
 

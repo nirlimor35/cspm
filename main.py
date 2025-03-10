@@ -86,6 +86,11 @@ class CSPM:
                 for service_class in discovered_services:
                     cur_service_name = str(service_class).split(".")[3].upper()
 
+                    special_names = ["CloudTrail", "GuardDuty", "Route53", "Secret Manager"]
+                    for special_name in special_names:
+                        if cur_service_name == special_name.upper().replace(" ", "_"):
+                            cur_service_name = special_name
+
                     shipper = SendToCoralogix(
                         endpoint=self.endpoint,
                         api_key=self.api_key,
