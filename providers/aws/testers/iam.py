@@ -3,14 +3,6 @@ from providers.aws.aws import AWSTesters
 from botocore.exceptions import ClientError
 
 """
-✅Ensure IAM password policy requires at least one uppercase letter
-✅Ensure IAM password policy requires at least one lowercase letter
-✅Ensure IAM password policy requires at least one symbol
-✅Ensure IAM password policy requires at least one number
-✅Ensure IAM password policy requires minimum password length of 14 or greater
-✅Ensure IAM password policy expires passwords within 90 days or less
-✅MFA should be enabled for all IAM users
-✅MFA should be enabled for all IAM users that have a console password
 mfa_should_be_enabled_for_users_with_console_access
 Password policies for IAM users should have strong configurations
 Ensure IAM password policy prevents password reuse

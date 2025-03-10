@@ -2,16 +2,6 @@ import inspect
 from providers.aws.aws import AWSTesters
 
 """
-✅ EC2 Auto Scaling groups should be tagged
-✅ Amazon EC2 Auto Scaling group should cover multiple Availability Zones
-✅ Auto Scaling group launch configurations should configure EC2 instances to require Instance Metadata Service Version 2 (IMDSv2)
-✅ EC2 Auto Scaling groups should use EC2 launch templates
-✅ Unused EC2 EIPs should be removed
-✅ EC2 launch templates should use Instance Metadata Service Version 2 (IMDSv2)
-✅ EC2 instances should be tagged
-✅ Amazon EC2 instances launched using Auto Scaling group should not have Public IP addresses
-✅ Unused EC2 security groups should be removed
-✅ EC2 security groups should be tagged
 Amazon EC2 should be configured to use VPC endpoints that are created for the Amazon EC2 service
 EC2 subnets should not automatically assign public IP addresses
 EC2 instances should not use multiple ENIs
