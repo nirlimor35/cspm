@@ -260,9 +260,10 @@ class Service(AWSTesters):
 
         existing_security_groups = {}
         for existing_security_group in self.describe_security_groups:
-            existing_security_groups.update({
-                existing_security_group["GroupName"]: existing_security_group["GroupId"]
-            })
+            if existing_security_group["GroupName"] != "default":
+                existing_security_groups.update({
+                    existing_security_group["GroupName"]: existing_security_group["GroupId"]
+                })
 
         for security_group_name, security_group_id in existing_security_groups.items():
             if security_group_id in used_security_group:
