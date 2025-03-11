@@ -129,6 +129,3 @@ class CSPM:
 # cx498.coralogix.com
 # ap3.coralogix.com
 
-endpoint = "coralogix.in"
-api_key = "5aa05908-d32e-8c8b-cb94-52ea227348e0"
-CSPM(endpoint, api_key, profile="sso-cdo").main()
