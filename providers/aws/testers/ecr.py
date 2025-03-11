@@ -5,6 +5,18 @@ import inspect
 import subprocess
 from providers.aws.aws import AWSTesters, AWS
 
+"""
+ECR private repositories should have image scanning configured
+ECR private repositories should have tag immutability configured
+ECR repositories should have at least one lifecycle policy configured
+ECR public repositories should be tagged
+ECR repositories should be encrypted with customer managed AWS KMS keys
+EKS clusters should use encrypted Kubernetes secrets
+Amazon Inspector ECR scanning should be enabled
+IAM customer managed policies should not allow decryption actions on all KMS keys
+IAM principals should not have IAM inline policies that allow decryption actions on all KMS keys
+"""
+
 
 class Service(AWSTesters, AWS):
     def __init__(self, execution_id, client, account_id, region, shipper):
@@ -92,9 +104,9 @@ class Service(AWSTesters, AWS):
                         results.append(cur_results)
                 if results and len(results) > 0:
                     print(
-                        f"INFO ℹ️ {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
+                        f" INFO 🔵 {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
                     self.shipper(results)
                 else:
-                    print(f"INFO ℹ️ {self.service_name} :: No logs found for region {self.region}")
+                    print(f" INFO 🔵 {self.service_name} :: No logs found for region {self.region}")
             except Exception as e:
                 print(e)

@@ -88,11 +88,13 @@ class Service(AWSTesters):
                 tags = auto_scaling_group["Tags"]
                 if tags and len(tags) > 0:
                     results.append(
-                        self._generate_results(self.account_id, self.service_name, test_name, group_name, self.region,
+                        self._generate_results(self.execution_id, self.account_id, self.service_name, test_name,
+                                               group_name, self.region,
                                                False))
                 else:
                     results.append(
-                        self._generate_results(self.account_id, self.service_name, test_name, group_name, self.region,
+                        self._generate_results(self.execution_id, self.account_id, self.service_name, test_name,
+                                               group_name, self.region,
                                                True))
         return results
 
@@ -309,10 +311,10 @@ class Service(AWSTesters):
                         results.append(cur_results)
                 if results and len(results) > 0:
                     print(
-                        f"INFO ℹ️ {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
+                        f" INFO 🔵 {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
                     self.shipper(results)
                 else:
-                    print(f"INFO ℹ️ {self.service_name} :: No logs found for region {self.region}")
+                    print(f" INFO 🔵 {self.service_name} :: No logs found for region {self.region}")
 
             except Exception as e:
                 if e:

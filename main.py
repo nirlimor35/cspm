@@ -83,7 +83,7 @@ class CSPM:
         current_execution_id = self.create_execution_id()
         if self.cloud_provider == "aws":
             start_timestamp = datetime.now()
-            print("INFO ℹ️ Starting scan in AWS 🔎\n")
+            print(" INFO 🔵 Starting scan in AWS 🔎\n")
 
             client, regions, account_id = self.init_aws()
             discovered_services = self.load_services_for_provider()
@@ -105,7 +105,7 @@ class CSPM:
                         subsystem=cur_service_name
                     )
 
-                    print(f"INFO ℹ️ {cur_service_name} :: Initiating...")
+                    print(f" INFO 🔵 {cur_service_name} :: Initiating...")
                     for region in regions:
                         future = executor.submit(
                             self.run_service,
@@ -129,3 +129,7 @@ class CSPM:
 # cx498.coralogix.com
 # ap3.coralogix.com
 
+
+endpoint = "coralogix.in"
+api_key = "5aa05908-d32e-8c8b-cb94-52ea227348e0"
+CSPM(endpoint, api_key, profile="external-test").main()

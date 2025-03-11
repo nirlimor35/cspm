@@ -1,6 +1,11 @@
 import inspect
 from providers.aws.aws import AWSTesters
 
+"""
+Route 53 health checks should be tagged
+Route 53 public hosted zones should log DNS queries
+"""
+
 
 class Service(AWSTesters):
     def __init__(self, execution_id, client, account_id, region, shipper):
@@ -26,10 +31,10 @@ class Service(AWSTesters):
                         results.append(cur_results)
                 if results and len(results) > 0:
                     print(
-                        f"INFO ℹ️ {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
+                        f" INFO 🔵 {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
                     self.shipper(results)
                 else:
-                    print(f"INFO ℹ️ {self.service_name} :: No logs found for region {self.region}")
+                    print(f" INFO 🔵 {self.service_name} :: No logs found for region {self.region}")
 
             except Exception as e:
                 if e:

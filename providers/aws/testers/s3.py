@@ -189,10 +189,10 @@ class Service(AWSTesters):
                         results.append(cur_results)
                 if results and len(results) > 0:
                     print(
-                        f"INFO ℹ️ {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix")
+                        f" INFO 🔵 {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix")
                     self.shipper(results)
                 else:
-                    print(f"INFO ℹ️ {self.service_name} :: No logs found")
+                    print(f" INFO 🔵 {self.service_name} :: No logs found")
 
             except Exception as e:
                 if e:
