@@ -8,8 +8,9 @@ GuardDuty IPSets should be tagged
 
 
 class Service(AWSTesters):
-    def __init__(self, client, account_id, region, shipper):
+    def __init__(self, execution_id, client, account_id, region, shipper):
         self.service_name = "GuardDuty"
+        self.execution_id = execution_id
         self.account_id = account_id
         self.region = region
         self.shipper = shipper.send_bulk
@@ -26,7 +27,7 @@ class Service(AWSTesters):
         if get_detector and len(get_detector) > 0:
             return get_detector
         else:
-            print(f"⭕️ ERROR :: {self.service_name} :: Failed to find detector with id '{detector_id}'")
+            print(f"ERROR ⭕️ {self.service_name} :: Failed to find detector with id '{detector_id}'")
 
     def _service_run_time_test(self, service, test_name):
         results = []
@@ -41,20 +42,23 @@ class Service(AWSTesters):
                                 for additional_feature in feature["AdditionalConfiguration"]:
                                     if additional_feature["Name"] == service:
                                         if additional_feature["Status"] == "ENABLED":
-                                            results.append(self._generate_results(
-                                                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
-                                                False,
-                                                additional_data))
+                                            results.append(self._generate_results(self.execution_id,
+                                                                                  self.account_id, self.service_name,
+                                                                                  test_name, "GuardDuty", self.region,
+                                                                                  False,
+                                                                                  additional_data))
                                         else:
-                                            results.append(self._generate_results(
-                                                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
-                                                True,
-                                                additional_data))
+                                            results.append(self._generate_results(self.execution_id,
+                                                                                  self.account_id, self.service_name,
+                                                                                  test_name, "GuardDuty", self.region,
+                                                                                  True,
+                                                                                  additional_data))
         else:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
-                True,
-                {"detector_id": "no detector found"}))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, "GuardDuty",
+                                                  self.region,
+                                                  True,
+                                                  {"detector_id": "no detector found"}))
         return results
 
     def _service_protection_test(self, service, test_name):
@@ -72,18 +76,22 @@ class Service(AWSTesters):
                                 if feature["Status"] == "ENABLED":
                                     feature["UpdatedAt"] = self._datetime_handler(feature["UpdatedAt"])
                                     additional_data.update({"feature": feature})
-                                    results.append(self._generate_results(
-                                        self.account_id, self.service_name, test_name, "GuardDuty", self.region, False,
-                                        additional_data))
+                                    results.append(self._generate_results(self.execution_id,
+                                                                          self.account_id, self.service_name, test_name,
+                                                                          "GuardDuty", self.region, False,
+                                                                          additional_data))
                                 else:
-                                    results.append(self._generate_results(
-                                        self.account_id, self.service_name, test_name, "GuardDuty", self.region, True,
-                                        additional_data))
+                                    results.append(self._generate_results(self.execution_id,
+                                                                          self.account_id, self.service_name, test_name,
+                                                                          "GuardDuty", self.region, True,
+                                                                          additional_data))
                     else:
-                        results.append(self._generate_results(
-                            self.account_id, self.service_name, test_name, "GuardDuty", self.region, True,
-                            additional_data))
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name,
+                                                              "GuardDuty", self.region, True,
+                                                              additional_data))
         return results
+
     @staticmethod
     def _datetime_handler(obj):
         from datetime import datetime, timezone
@@ -101,18 +109,21 @@ class Service(AWSTesters):
                 additional_data = {"detector_id": detector_id}
                 cur_detector = self._get_detector(detector_id)
                 if "Status" in cur_detector and cur_detector["Status"] == "ENABLED":
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, "GuardDuty", self.region, False,
-                        additional_data))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, "GuardDuty",
+                                                          self.region, False,
+                                                          additional_data))
                 else:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, "GuardDuty", self.region, True,
-                        additional_data))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, "GuardDuty",
+                                                          self.region, True,
+                                                          additional_data))
 
         else:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, "GuardDuty", self.region, True,
-                {"detector_id": "no detector found"}))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, "GuardDuty",
+                                                  self.region, True,
+                                                  {"detector_id": "no detector found"}))
         return results
 
     def test_s3_protection_should_be_enabled(self):
@@ -143,17 +154,20 @@ class Service(AWSTesters):
                                 s3_in_features = True
 
                 if s3_in_data_source and s3_in_features:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, "GuardDuty", self.region, False,
-                        additional_data))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, "GuardDuty",
+                                                          self.region, False,
+                                                          additional_data))
                 else:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, "GuardDuty", self.region, True))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, "GuardDuty",
+                                                          self.region, True))
         else:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
-                True,
-                {"detector_id": "no detector found"}))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, "GuardDuty",
+                                                  self.region,
+                                                  True,
+                                                  {"detector_id": "no detector found"}))
         return results
 
     def test_runtime_monitoring_should_be_enabled(self):
@@ -168,18 +182,21 @@ class Service(AWSTesters):
                     for feature in cur_detector["Features"]:
                         if feature["Name"] == "RUNTIME_MONITORING":
                             if feature["Status"] == "ENABLED":
-                                results.append(self._generate_results(
-                                    self.account_id, self.service_name, test_name, "GuardDuty", self.region, False,
-                                    additional_data))
+                                results.append(self._generate_results(self.execution_id,
+                                                                      self.account_id, self.service_name, test_name,
+                                                                      "GuardDuty", self.region, False,
+                                                                      additional_data))
                             else:
-                                results.append(self._generate_results(
-                                    self.account_id, self.service_name, test_name, "GuardDuty", self.region, True,
-                                    additional_data))
+                                results.append(self._generate_results(self.execution_id,
+                                                                      self.account_id, self.service_name, test_name,
+                                                                      "GuardDuty", self.region, True,
+                                                                      additional_data))
         else:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
-                True,
-                {"detector_id": "no detector found"}))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, "GuardDuty",
+                                                  self.region,
+                                                  True,
+                                                  {"detector_id": "no detector found"}))
         return results
 
     def test_ec2_runtime_monitoring_should_be_enabled(self):
@@ -203,20 +220,23 @@ class Service(AWSTesters):
                 additional_data = {"detector_id": detector_id}
                 cur_detector = self._get_detector(detector_id)
                 if "Tags" in cur_detector and len(cur_detector["Tags"]) > 0:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, "GuardDuty", self.region,
-                        False,
-                        additional_data))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, "GuardDuty",
+                                                          self.region,
+                                                          False,
+                                                          additional_data))
                 else:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, "GuardDuty", self.region,
-                        True,
-                        additional_data))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, "GuardDuty",
+                                                          self.region,
+                                                          True,
+                                                          additional_data))
         else:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, "GuardDuty", self.region,
-                True,
-                {"detector_id": "no detector found"}))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, "GuardDuty",
+                                                  self.region,
+                                                  True,
+                                                  {"detector_id": "no detector found"}))
         return results
 
     def test_lambda_protection_should_be_enabled(self):
@@ -250,12 +270,12 @@ class Service(AWSTesters):
                         results.append(cur_results)
                 if results and len(results) > 0:
                     print(
-                        f"INFO :: {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
+                        f"INFO ℹ️ {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
                     self.shipper(results)
                 else:
-                    print(f"INFO :: {self.service_name} :: No logs found for region {self.region}")
+                    print(f"INFO ℹ️ {self.service_name} :: No logs found for region {self.region}")
 
             except Exception as e:
                 if e:
-                    print(f"⭕️ ERROR :: {self.service_name} :: {e}")
+                    print(f"ERROR ⭕️ {self.service_name} :: {e}")
                     exit(8)

@@ -7,9 +7,10 @@ from providers.aws.aws import AWSTesters, AWS
 
 
 class Service(AWSTesters, AWS):
-    def __init__(self, client, account_id, region, shipper):
+    def __init__(self, execution_id, client, account_id, region, shipper):
         super().__init__()
         self.service_name = "ECR"
+        self.execution_id = execution_id
         self.region = region
         self.account_id = account_id
         self.shipper = shipper.send_bulk
@@ -35,14 +36,14 @@ class Service(AWSTesters, AWS):
         completed_process = subprocess.run(cmd, capture_output=True, text=True)
 
         if completed_process.returncode != 0:
-            message = f"⭕️ ERROR :: {self.service_name} :: Grype failed to run - {completed_process.stderr}"
+            message = f"ERROR ⭕️ {self.service_name} :: Grype failed to run - {completed_process.stderr}"
             print(message)
             raise RuntimeError(message)
 
         try:
             parsed_output = json.loads(completed_process.stdout)
         except json.JSONDecodeError as e:
-            message = f"⭕️ ERROR :: {self.service_name} :: Failed to parse output as JSON - {e}"
+            message = f"ERROR ⭕️ {self.service_name} :: Failed to parse output as JSON - {e}"
             print(message)
             raise ValueError(message)
         if "matches" in parsed_output:
@@ -72,9 +73,9 @@ class Service(AWSTesters, AWS):
                             "fixed_versions": cur_fin["vulnerability"]["fix"]["versions"]
                         }
                         cur_filtered_finding.append(additional_data)
-                        results.append(self._generate_results(
-                            self.account_id, self.service_name, test_name,
-                            repository_name, self.region, True, additional_data))
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name,
+                                                              repository_name, self.region, True, additional_data))
 
         return results
 
@@ -91,9 +92,9 @@ class Service(AWSTesters, AWS):
                         results.append(cur_results)
                 if results and len(results) > 0:
                     print(
-                        f"INFO :: {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
+                        f"INFO ℹ️ {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
                     self.shipper(results)
                 else:
-                    print(f"INFO :: {self.service_name} :: No logs found for region {self.region}")
+                    print(f"INFO ℹ️ {self.service_name} :: No logs found for region {self.region}")
             except Exception as e:
                 print(e)

@@ -29,7 +29,8 @@ IAM authentication should be configured for RDS clusters
 
 
 class Service(AWSTesters):
-    def __init__(self, client, account_id, region, shipper):
+    def __init__(self, execution_id, client, account_id, region, shipper):
+        self.execution_id = execution_id
         self.service_name = "IAM"
         self.account_id = account_id
         self.region = region
@@ -39,7 +40,8 @@ class Service(AWSTesters):
 
     def _iam_init(self):
         account_password_policy = self.iam_client.get_account_password_policy()
-        self.password_policy = account_password_policy["PasswordPolicy"] if "PasswordPolicy" in account_password_policy else None
+        self.password_policy = account_password_policy[
+            "PasswordPolicy"] if "PasswordPolicy" in account_password_policy else None
         list_users_response = self.iam_client.list_users()
         self.iam_users = list_users_response["Users"] if "Users" in list_users_response else None
 
@@ -48,11 +50,13 @@ class Service(AWSTesters):
 
         results = []
         if self.password_policy and self.password_policy["RequireUppercaseCharacters"]:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, self.account_id, self.region, False, self.password_policy))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, self.account_id,
+                                                  self.region, False, self.password_policy))
         else:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, self.account_id, self.region, True, self.password_policy))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, self.account_id,
+                                                  self.region, True, self.password_policy))
         return results
 
     def test_iam_password_policy_requires_at_least_one_lowercase_letter(self):
@@ -60,11 +64,13 @@ class Service(AWSTesters):
 
         results = []
         if self.password_policy and self.password_policy["RequireLowercaseCharacters"]:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, self.account_id, self.region, False, self.password_policy))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, self.account_id,
+                                                  self.region, False, self.password_policy))
         else:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, self.account_id, self.region, True, self.password_policy))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, self.account_id,
+                                                  self.region, True, self.password_policy))
         return results
 
     def test_iam_password_policy_requires_symbols(self):
@@ -72,11 +78,13 @@ class Service(AWSTesters):
 
         results = []
         if self.password_policy and self.password_policy["RequireSymbols"]:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, self.account_id, self.region, False, self.password_policy))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, self.account_id,
+                                                  self.region, False, self.password_policy))
         else:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, self.account_id, self.region, True, self.password_policy))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, self.account_id,
+                                                  self.region, True, self.password_policy))
         return results
 
     def test_iam_password_policy_requires_numbers(self):
@@ -84,11 +92,13 @@ class Service(AWSTesters):
 
         results = []
         if self.password_policy and self.password_policy["RequireNumbers"]:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, self.account_id, self.region, False, self.password_policy))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, self.account_id,
+                                                  self.region, False, self.password_policy))
         else:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, self.account_id, self.region, True, self.password_policy))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, self.account_id,
+                                                  self.region, True, self.password_policy))
         return results
 
     def test_iam_password_policy_requires_minimum_password_length_of_14_or_greater(self):
@@ -97,11 +107,13 @@ class Service(AWSTesters):
         results = []
         if self.password_policy and self.password_policy["MinimumPasswordLength"]:
             if self.password_policy["MinimumPasswordLength"] < 14:
-                results.append(self._generate_results(
-                    self.account_id, self.service_name, test_name, self.account_id, self.region, True, self.password_policy))
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name, self.account_id,
+                                                      self.region, True, self.password_policy))
             else:
-                results.append(self._generate_results(
-                    self.account_id, self.service_name, test_name, self.account_id, self.region, False, self.password_policy))
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name, self.account_id,
+                                                      self.region, False, self.password_policy))
         return results
 
     def test_iam_password_policy_expires_passwords_within_90_days_or_less(self):
@@ -110,11 +122,13 @@ class Service(AWSTesters):
         results = []
         if self.password_policy and self.password_policy["MaxPasswordAge"]:
             if self.password_policy["MaxPasswordAge"] < 90:
-                results.append(self._generate_results(
-                    self.account_id, self.service_name, test_name, self.account_id, self.region, False, self.password_policy))
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name, self.account_id,
+                                                      self.region, False, self.password_policy))
             else:
-                results.append(self._generate_results(
-                    self.account_id, self.service_name, test_name, self.account_id, self.region, True, self.password_policy))
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name, self.account_id,
+                                                      self.region, True, self.password_policy))
         return results
 
     def test_mfa_should_be_enabled_for_all_iam_users(self):
@@ -125,11 +139,13 @@ class Service(AWSTesters):
         for user_name in user_names:
             mfa_device_for_user = self.iam_client.list_mfa_devices(UserName=user_name)
             if "MFADevices" in mfa_device_for_user and len(mfa_device_for_user["MFADevices"]) > 0:
-                results.append(self._generate_results(
-                    self.account_id, self.service_name, test_name, user_name, self.region, False))
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name, user_name,
+                                                      self.region, False))
             else:
-                results.append(self._generate_results(
-                    self.account_id, self.service_name, test_name, user_name, self.region, True))
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name, user_name,
+                                                      self.region, True))
         return results
 
     def test_mfa_should_be_enabled_for_users_with_console_access(self):
@@ -143,15 +159,18 @@ class Service(AWSTesters):
                 if user_with_console_access and len(user_with_console_access) > 0:
                     mfa_device_for_user = self.iam_client.list_mfa_devices(UserName=user_name)
                     if "MFADevices" in mfa_device_for_user and len(mfa_device_for_user["MFADevices"]) > 0:
-                        results.append(self._generate_results(
-                            self.account_id, self.service_name, test_name, user_name, self.region, False))
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name, user_name,
+                                                              self.region, False))
                     else:
-                        results.append(self._generate_results(
-                            self.account_id, self.service_name, test_name, user_name, self.region, True))
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name, user_name,
+                                                              self.region, True))
             except ClientError as error:
                 if error.response['Error']['Code'] == 'NoSuchEntity':
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, user_name, self.region, False))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, user_name,
+                                                          self.region, False))
 
         return results
 
@@ -170,14 +189,14 @@ class Service(AWSTesters):
                         results.append(cur_results)
                 if results and len(results) > 0:
                     print(
-                        f"INFO :: {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix")
+                        f"INFO ℹ️ {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix")
                     self.shipper(results)
                 else:
-                    print(f"INFO :: {self.service_name} :: No logs found")
+                    print(f"INFO ℹ️ {self.service_name} :: No logs found")
 
             except Exception as e:
                 if e:
-                    print(f"⭕️ ERROR :: {self.service_name} :: {e}")
+                    print(f"ERROR ⭕️ {self.service_name} :: {e}")
                     exit(8)
         else:
             pass

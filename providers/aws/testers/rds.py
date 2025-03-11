@@ -3,8 +3,9 @@ from providers.aws.aws import AWSTesters
 
 
 class Service(AWSTesters):
-    def __init__(self, client, account_id, region, shipper):
+    def __init__(self, execution_id, client, account_id, region, shipper):
         self.service_name = "RDS"
+        self.execution_id = execution_id
         self.account_id = account_id
         self.region = region
         self.shipper = shipper.send_bulk
@@ -25,12 +26,12 @@ class Service(AWSTesters):
                         results.append(cur_results)
                 if results and len(results) > 0:
                     print(
-                        f"INFO :: {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
+                        f"INFO ℹ️ {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
                     self.shipper(results)
                 else:
-                    print(f"INFO :: {self.service_name} :: No logs found for region {self.region}")
+                    print(f"INFO ℹ️ {self.service_name} :: No logs found for region {self.region}")
 
             except Exception as e:
                 if e:
-                    print(f"⭕️ ERROR :: {self.service_name} :: {e}")
+                    print(f"ERROR ⭕️ {self.service_name} :: {e}")
                     exit(8)

@@ -21,8 +21,9 @@ S3 general purpose buckets should have server access logging enabled
 
 
 class Service(AWSTesters):
-    def __init__(self, client, account_id, region, shipper):
+    def __init__(self, execution_id, client, account_id, region, shipper):
         self.service_name = "S3"
+        self.execution_id = execution_id
         self.account_id = account_id
         self.region = region
         self.shipper = shipper.send_bulk
@@ -52,19 +53,24 @@ class Service(AWSTesters):
                             break
 
                     if open_configuration:
-                        results.append(self._generate_results(
-                            self.account_id, self.service_name, test_name, bucket_name, self.region, True,
-                            cur_block_public_access["PublicAccessBlockConfiguration"]))
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name,
+                                                              bucket_name, self.region, True,
+                                                              cur_block_public_access[
+                                                                  "PublicAccessBlockConfiguration"]))
                     else:
-                        results.append(self._generate_results(
-                            self.account_id, self.service_name, test_name, bucket_name, self.region, False,
-                            cur_block_public_access["PublicAccessBlockConfiguration"]))
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name,
+                                                              bucket_name, self.region, False,
+                                                              cur_block_public_access[
+                                                                  "PublicAccessBlockConfiguration"]))
                 else:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, bucket_name, self.region, False,
-                        cur_block_public_access["PublicAccessBlockConfiguration"]))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, bucket_name,
+                                                          self.region, False,
+                                                          cur_block_public_access["PublicAccessBlockConfiguration"]))
             except Exception as e:
-                print(f"⭕️ ERROR :: {self.service_name} :: {e}")
+                print(f"ERROR ⭕️ {self.service_name} :: {e}")
         return results
 
     def test_buckets_should_have_versioning_enabled(self):
@@ -74,12 +80,14 @@ class Service(AWSTesters):
         for bucket_name in self.all_bucket_names:
             versioning = self.s3_client.get_bucket_versioning(Bucket=bucket_name)
             if "Status" in versioning and versioning["Status"] == "Enabled":
-                results.append(self._generate_results(
-                    self.account_id, self.service_name, test_name, bucket_name, self.region, False))
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name, bucket_name,
+                                                      self.region, False))
                 self.buckets_with_versioning_enabled.append(bucket_name)
             else:
-                results.append(self._generate_results(
-                    self.account_id, self.service_name, test_name, bucket_name, self.region, True))
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name, bucket_name,
+                                                      self.region, True))
         return results
 
     def test_buckets_should_have_lifecycle_configurations(self):
@@ -91,18 +99,21 @@ class Service(AWSTesters):
                 response = self.s3_client.get_bucket_lifecycle_configuration(Bucket=bucket_name)
                 rules = response.get('Rules', [])
                 if rules:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, bucket_name, self.region, False))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, bucket_name,
+                                                          self.region, False))
                     self.buckets_with_lifecycle_configuration_enabled.append(bucket_name)
                 else:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, bucket_name, self.region, True))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, bucket_name,
+                                                          self.region, True))
             except ClientError as e:
                 if e.response['Error']['Code'] == 'NoSuchLifecycleConfiguration':
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, bucket_name, self.region, True))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, bucket_name,
+                                                          self.region, True))
                 else:
-                    print(f'⭕️ ERROR :: Failed to check bucket "{bucket_name}" - {e}')
+                    print(f'ERROR ⭕️ Failed to check bucket "{bucket_name}" - {e}')
         return results
 
     def test_buckets_should_have_object_lock_enabled(self):
@@ -114,15 +125,18 @@ class Service(AWSTesters):
                 response = self.s3_client.get_object_lock_configuration(Bucket=bucket_name)
                 configuration = response.get('ObjectLockConfiguration', {})
                 if configuration and configuration.get('ObjectLockEnabled') == 'Enabled':
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, bucket_name, self.region, False))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, bucket_name,
+                                                          self.region, False))
                 else:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, bucket_name, self.region, True))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, bucket_name,
+                                                          self.region, True))
             except ClientError as e:
                 if e.response['Error']['Code'] == 'ObjectLockConfigurationNotFoundError':
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, bucket_name, self.region, True))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, bucket_name,
+                                                          self.region, True))
                 else:
                     print(f'Error checking bucket "{bucket_name}": {e}')
         return results
@@ -134,11 +148,13 @@ class Service(AWSTesters):
         if len(self.buckets_with_versioning_enabled) > 0:
             for versioned_bucket in self.buckets_with_versioning_enabled:
                 if versioned_bucket in self.buckets_with_lifecycle_configuration_enabled:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, versioned_bucket, self.region, False))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name,
+                                                          versioned_bucket, self.region, False))
                 else:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, versioned_bucket, self.region, True))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name,
+                                                          versioned_bucket, self.region, True))
         return results
 
     def test_buckets_should_have_event_notifications_enabled(self):
@@ -149,11 +165,13 @@ class Service(AWSTesters):
             response = self.s3_client.get_bucket_notification_configuration(Bucket=bucket_name)
             del response["ResponseMetadata"]
             if response and len(response) > 0:
-                results.append(self._generate_results(
-                    self.account_id, self.service_name, test_name, bucket_name, self.region, False, response))
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name, bucket_name,
+                                                      self.region, False, response))
             else:
-                results.append(self._generate_results(
-                    self.account_id, self.service_name, test_name, bucket_name, self.region, True))
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name, bucket_name,
+                                                      self.region, True))
         return results
 
     def run(self):
@@ -171,14 +189,14 @@ class Service(AWSTesters):
                         results.append(cur_results)
                 if results and len(results) > 0:
                     print(
-                        f"INFO :: {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix")
+                        f"INFO ℹ️ {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix")
                     self.shipper(results)
                 else:
-                    print(f"INFO :: {self.service_name} :: No logs found")
+                    print(f"INFO ℹ️ {self.service_name} :: No logs found")
 
             except Exception as e:
                 if e:
-                    print(f"⭕️ ERROR :: {self.service_name} :: {e}")
+                    print(f"ERROR ⭕️ {self.service_name} :: {e}")
                     exit(8)
         else:
             pass

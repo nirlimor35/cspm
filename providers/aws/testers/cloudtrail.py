@@ -9,7 +9,8 @@ Ensure a log metric filter and alarm exist for CloudTrail configuration changes
 
 
 class Service(AWSTesters):
-    def __init__(self, client, account_id, region, shipper):
+    def __init__(self, execution_id, client, account_id, region, shipper):
+        self.execution_id = execution_id
         self.service_name = "CloudTrail"
         self.account_id = account_id
         self.region = region
@@ -22,7 +23,8 @@ class Service(AWSTesters):
         if "trailList" in trail_list:
             self.trail_list = trail_list["trailList"]
 
-    def test_cloudtrail_should_be_enabled_and_configured_with_at_least_one_multi_region_trail_that_includes_read_and_write_management_events(self):
+    def test_cloudtrail_should_be_enabled_and_configured_with_at_least_one_multi_region_trail_that_includes_read_and_write_management_events(
+            self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -51,13 +53,15 @@ class Service(AWSTesters):
                                 logs_read__or_write_only = True
 
                 if is_enabled and is_multi_region and not logs_read__or_write_only:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, trail_name, self.region, False,
-                        additional_data))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, trail_name,
+                                                          self.region, False,
+                                                          additional_data))
                 else:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, trail_name, self.region, True,
-                        additional_data))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, trail_name,
+                                                          self.region, True,
+                                                          additional_data))
         return results
 
     def test_trail_should_have_encryption_at_rest_enabled(self):
@@ -71,14 +75,16 @@ class Service(AWSTesters):
                 additional_data = {"home_region": region}
                 if "KmsKeyId" in trail:
                     additional_data.update({"kms_key_id": trail["KmsKeyId"]})
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, trail_name, self.region, False,
-                        additional_data))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, trail_name,
+                                                          self.region, False,
+                                                          additional_data))
                 else:
                     additional_data.update({"kms_key_id": "no key found"})
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, trail_name, self.region, True,
-                        additional_data))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, trail_name,
+                                                          self.region, True,
+                                                          additional_data))
         return results
 
     def test_at_least_one_trail_is_enabled(self):
@@ -86,11 +92,13 @@ class Service(AWSTesters):
 
         results = []
         if self.trail_list and len(self.trail_list) > 0:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, "CloudTrail", self.region, False))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, "CloudTrail",
+                                                  self.region, False))
         else:
-            results.append(self._generate_results(
-                self.account_id, self.service_name, test_name, "CloudTrail", self.region, True))
+            results.append(self._generate_results(self.execution_id,
+                                                  self.account_id, self.service_name, test_name, "CloudTrail",
+                                                  self.region, True))
         return results
 
     def test_log_file_validation_should_be_enabled(self):
@@ -103,13 +111,15 @@ class Service(AWSTesters):
                 region = trail["HomeRegion"]
                 additional_data = {"home_region": region}
                 if "LogFileValidationEnabled" in trail and trail["LogFileValidationEnabled"]:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, trail_name, self.region, False,
-                        additional_data))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, trail_name,
+                                                          self.region, False,
+                                                          additional_data))
                 else:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, trail_name, self.region, True,
-                        additional_data))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, trail_name,
+                                                          self.region, True,
+                                                          additional_data))
 
         return results
 
@@ -122,15 +132,17 @@ class Service(AWSTesters):
                 trail_name = trail['Name']
                 region = trail["HomeRegion"]
                 additional_data = {"home_region": region}
-                if "CloudWatchLogsLogGroupArn" in trail and len(trail["CloudWatchLogsLogGroupArn"]) > 0\
+                if "CloudWatchLogsLogGroupArn" in trail and len(trail["CloudWatchLogsLogGroupArn"]) > 0 \
                         and "CloudWatchLogsRoleArn" in trail and len(trail["CloudWatchLogsRoleArn"]) > 0:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, trail_name, self.region, False,
-                        additional_data))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, trail_name,
+                                                          self.region, False,
+                                                          additional_data))
                 else:
-                    results.append(self._generate_results(
-                        self.account_id, self.service_name, test_name, trail_name, self.region, True,
-                        additional_data))
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, trail_name,
+                                                          self.region, True,
+                                                          additional_data))
 
         return results
 
@@ -152,13 +164,15 @@ class Service(AWSTesters):
                         trail_tags = cur_resource_tag_list["TagsList"]
                         if trail_tags and len(trail_tags) > 0:
                             additional_data.update({"trail_tags": trail_tags})
-                            results.append(self._generate_results(
-                                self.account_id, self.service_name, test_name, trail_name, self.region, False,
-                                additional_data))
+                            results.append(self._generate_results(self.execution_id,
+                                                                  self.account_id, self.service_name, test_name,
+                                                                  trail_name, self.region, False,
+                                                                  additional_data))
                         else:
-                            results.append(self._generate_results(
-                                self.account_id, self.service_name, test_name, trail_name, self.region, True,
-                                additional_data))
+                            results.append(self._generate_results(self.execution_id,
+                                                                  self.account_id, self.service_name, test_name,
+                                                                  trail_name, self.region, True,
+                                                                  additional_data))
 
         return results
 
@@ -177,12 +191,12 @@ class Service(AWSTesters):
                         results.append(cur_results)
                 if results and len(results) > 0:
                     print(
-                        f"INFO :: {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
+                        f"INFO ℹ️ {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix for region {self.region}")
                     self.shipper(results)
                 else:
-                    print(f"INFO :: {self.service_name} :: No logs found for region {self.region}")
+                    print(f"INFO ℹ️ {self.service_name} :: No logs found for region {self.region}")
 
             except Exception as e:
                 if e:
-                    print(f"⭕️ ERROR :: {self.service_name} :: {e}")
+                    print(f"ERROR ⭕️ {self.service_name} :: {e}")
                     exit(8)

@@ -53,7 +53,7 @@ class SendToCoralogix:
         )
         if not 199 < request.status_code < 299:
             print(
-                f"⭕️ ERROR :: Failed to send logs to Coralogix - {request.status_code} - {request.text}")
+                f"ERROR ⭕️ Failed to send logs to Coralogix - {request.status_code} - {request.text}")
             exit(2)
         else:
             return True
@@ -65,7 +65,7 @@ class SendToCoralogix:
             try:
                 sending_ok = self.send_logs(batch_value)
             except Exception as e:
-                print(f"⭕️ ERROR :: Failed to send logs to Coralogix - {e}")
+                print(f"ERROR ⭕️ Failed to send logs to Coralogix - {e}")
                 exit(3)
         return sending_ok
 

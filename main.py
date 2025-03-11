@@ -1,5 +1,6 @@
-import pkgutil
 import os
+import uuid
+import pkgutil
 import importlib
 import providers
 import concurrent.futures
@@ -55,7 +56,7 @@ class CSPM:
                     module = importlib.import_module(all_services[service])
                     services.append(load_module(module))
                 else:
-                    print(f"⭕ ERROR :: Unknown service '{service}' selected by user")
+                    print(f"ERROR ⭕ Unknown service '{service}' selected by user")
                     exit(9)
         else:
             for name, cur_module in all_services.items():
@@ -65,18 +66,24 @@ class CSPM:
         return services
 
     @staticmethod
-    def run_service(service_class, client, account_id: str, region: str, shipper: SendToCoralogix):
+    def run_service(current_execution_id: str, service_class, client, account_id: str, region: str, shipper: SendToCoralogix):
         service_class(
+            execution_id=current_execution_id,
             client=client,
             region=region,
             account_id=account_id,
             shipper=shipper
         ).run()
 
+    @staticmethod
+    def create_execution_id():
+        return str(uuid.uuid4())
+
     def main(self):
+        current_execution_id = self.create_execution_id()
         if self.cloud_provider == "aws":
             start_timestamp = datetime.now()
-            print("INFO :: Starting scan in AWS 🔎\n")
+            print("INFO ℹ️ Starting scan in AWS 🔎\n")
 
             client, regions, account_id = self.init_aws()
             discovered_services = self.load_services_for_provider()
@@ -98,10 +105,11 @@ class CSPM:
                         subsystem=cur_service_name
                     )
 
-                    print(f"INFO :: {cur_service_name} :: Initiating...")
+                    print(f"INFO ℹ️ {cur_service_name} :: Initiating...")
                     for region in regions:
                         future = executor.submit(
                             self.run_service,
+                            current_execution_id,
                             service_class,
                             client,
                             account_id,
@@ -109,15 +117,6 @@ class CSPM:
                             shipper
                         )
                         future_to_task[future] = (cur_service_name, region)
-
-                # for future in concurrent.futures.as_completed(future_to_task):
-                #     service_name, region = future_to_task[future]
-                #     try:
-                #         future.result()
-                #     except Exception as exc:
-                #         print(f"ERROR :: {service_name} :: {region} :: {exc}")
-                #         futures.append(
-                #             executor.submit(self.run_service, service_class, client, account_id, region, shipper))
 
             duration = (datetime.now() - start_timestamp).total_seconds()
             print(f"\n✅ Scan completed in {duration} seconds")
@@ -132,4 +131,4 @@ class CSPM:
 
 endpoint = "coralogix.in"
 api_key = "5aa05908-d32e-8c8b-cb94-52ea227348e0"
-CSPM(endpoint, api_key, profile="external-test").main()
+CSPM(endpoint, api_key, profile="sso-cdo").main()
