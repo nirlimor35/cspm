@@ -1,11 +1,7 @@
+import json
 import inspect
 from providers.aws.aws import AWSTesters
-
-"""
-Ensure the S3 bucket used to store CloudTrail logs is not publicly accessible
-Ensure S3 bucket access logging is enabled on the CloudTrail S3 bucket
-Ensure a log metric filter and alarm exist for CloudTrail configuration changes
-"""
+from botocore.exceptions import ClientError
 
 
 class Service(AWSTesters):
@@ -16,6 +12,7 @@ class Service(AWSTesters):
         self.region = region
         self.shipper = shipper.send_bulk
         self.cloudtrail_client = client
+        self.s3_client = client("s3")
         self.trail_list = None
 
     def _init_cloudtrail(self):
@@ -23,7 +20,7 @@ class Service(AWSTesters):
         if "trailList" in trail_list:
             self.trail_list = trail_list["trailList"]
 
-    def test_cloudtrail_should_be_enabled_and_configured_with_at_least_one_multi_region_trail_that_includes_read_and_write_management_events(
+    def global_test_cloudtrail_should_be_enabled_and_configured_with_at_least_one_multi_region_trail_that_includes_read_and_write_management_events(
             self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
@@ -64,7 +61,7 @@ class Service(AWSTesters):
                                                           additional_data))
         return results
 
-    def test_trail_should_have_encryption_at_rest_enabled(self):
+    def global_test_trail_should_have_encryption_at_rest_enabled(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -87,7 +84,7 @@ class Service(AWSTesters):
                                                           additional_data))
         return results
 
-    def test_at_least_one_trail_is_enabled(self):
+    def global_test_at_least_one_trail_is_enabled(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -101,7 +98,7 @@ class Service(AWSTesters):
                                                   self.region, True))
         return results
 
-    def test_log_file_validation_should_be_enabled(self):
+    def global_test_log_file_validation_should_be_enabled(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -123,7 +120,7 @@ class Service(AWSTesters):
 
         return results
 
-    def test_trails_should_be_integrated_with_cloudwatch_logs(self):
+    def global_test_trails_should_be_integrated_with_cloudwatch_logs(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -146,7 +143,7 @@ class Service(AWSTesters):
 
         return results
 
-    def test_trails_should_be_tagged(self):
+    def global_test_trails_should_be_tagged(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -176,10 +173,80 @@ class Service(AWSTesters):
 
         return results
 
+    def global_test_ensure_the_s3_bucket_used_to_store_cloudtrail_logs_is_not_publicly_accessible(self):
+        test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
+
+        results = []
+        if self.trail_list and len(self.trail_list) > 0:
+            for trail in self.trail_list:
+                trail_name = trail['Name']
+                if "S3BucketName" in trail:
+                    s3_bucket_trail = trail["S3BucketName"]
+                    additional_data = {"trails_bucket": s3_bucket_trail}
+                    public_by_acl = False
+                    public_by_policy = False
+                    try:
+                        acl = self.s3_client.get_bucket_acl(Bucket=s3_bucket_trail)
+                        for grant in acl.get("Grants", []):
+                            grantee = grant.get("Grantee", {})
+                            if grantee.get("Type") == "Group" and "AllUsers" in grantee.get("URI", ""):
+                                public_by_acl = True
+                    except ClientError as e:
+                        print(f"Error retrieving ACL for {s3_bucket_trail}: {e}")
+
+                    try:
+                        policy = self.s3_client.get_bucket_policy(Bucket=s3_bucket_trail)
+                        policy_statements = json.loads(policy["Policy"]).get("Statement", [])
+                        for statement in policy_statements:
+                            if statement.get("Effect") == "Allow":
+                                principal = statement.get("Principal", {})
+                                if principal == "*" or (
+                                        isinstance(principal, dict) and "AWS" in principal and principal["AWS"] == "*"):
+                                    public_by_policy = True
+                    except ClientError as e:
+                        if "NoSuchBucketPolicy" in str(e):
+                            print(f"[INFO] No bucket policy found for {s3_bucket_trail}.")
+                        else:
+                            print(f"Error retrieving policy for {s3_bucket_trail}: {e}")
+
+                    if not public_by_acl and not public_by_policy:
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name,
+                                                              trail_name, self.region, False, additional_data))
+                    else:
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name,
+                                                              trail_name, self.region, False, additional_data))
+        return results
+
+    def global_test_ensure_s3_bucket_access_logging_is_enabled_on_the_cloudtrail_s3_bucket(self):
+        test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
+
+        results = []
+        if self.trail_list and len(self.trail_list) > 0:
+            for trail in self.trail_list:
+                trail_name = trail['Name']
+                if "S3BucketName" in trail:
+                    s3_bucket_trail = trail["S3BucketName"]
+                    additional_data = {"trails_bucket": s3_bucket_trail}
+                    try:
+                        bucket_logging = self.s3_client.get_bucket_logging(Bucket=s3_bucket_trail)
+                        if "LoggingEnabled" in bucket_logging:
+                            results.append(self._generate_results(self.execution_id,
+                                                                  self.account_id, self.service_name, test_name,
+                                                                  trail_name, self.region, False, additional_data))
+                        else:
+                            results.append(self._generate_results(self.execution_id,
+                                                                  self.account_id, self.service_name, test_name,
+                                                                  trail_name, self.region, True, additional_data))
+                    except ClientError as e:
+                        print(f"Error {e}")
+        return results
+
     def run(self):
         global_tests, regional_tests = self._get_all_tests()
+        self._init_cloudtrail()
         if self.region != "global":
             self.run_test(self.service_name, regional_tests, self.shipper, self.region)
         if self.region == "global":
-            self._init_cloudtrail()
             self.run_test(self.service_name, global_tests, self.shipper, self.region)
