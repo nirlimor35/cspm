@@ -45,7 +45,7 @@ class Service(AWSTesters):
         list_users_response = self.iam_client.list_users()
         self.iam_users = list_users_response["Users"] if "Users" in list_users_response else None
 
-    def test_iam_password_policy_requires_at_least_one_uppercase_letter(self):
+    def global_test_iam_password_policy_requires_at_least_one_uppercase_letter(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -59,7 +59,7 @@ class Service(AWSTesters):
                                                   self.region, True, self.password_policy))
         return results
 
-    def test_iam_password_policy_requires_at_least_one_lowercase_letter(self):
+    def global_test_iam_password_policy_requires_at_least_one_lowercase_letter(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -73,7 +73,7 @@ class Service(AWSTesters):
                                                   self.region, True, self.password_policy))
         return results
 
-    def test_iam_password_policy_requires_symbols(self):
+    def global_test_iam_password_policy_requires_symbols(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -87,7 +87,7 @@ class Service(AWSTesters):
                                                   self.region, True, self.password_policy))
         return results
 
-    def test_iam_password_policy_requires_numbers(self):
+    def global_test_iam_password_policy_requires_numbers(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -101,7 +101,7 @@ class Service(AWSTesters):
                                                   self.region, True, self.password_policy))
         return results
 
-    def test_iam_password_policy_requires_minimum_password_length_of_14_or_greater(self):
+    def global_test_iam_password_policy_requires_minimum_password_length_of_14_or_greater(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -116,7 +116,7 @@ class Service(AWSTesters):
                                                       self.region, False, self.password_policy))
         return results
 
-    def test_iam_password_policy_expires_passwords_within_90_days_or_less(self):
+    def global_test_iam_password_policy_expires_passwords_within_90_days_or_less(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -131,7 +131,7 @@ class Service(AWSTesters):
                                                       self.region, True, self.password_policy))
         return results
 
-    def test_mfa_should_be_enabled_for_all_iam_users(self):
+    def global_test_mfa_should_be_enabled_for_all_iam_users(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -148,7 +148,7 @@ class Service(AWSTesters):
                                                       self.region, True))
         return results
 
-    def test_mfa_should_be_enabled_for_users_with_console_access(self):
+    def global_test_mfa_should_be_enabled_for_users_with_console_access(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -175,28 +175,9 @@ class Service(AWSTesters):
         return results
 
     def run(self):
+        global_tests, regional_tests = self._get_all_tests()
+        if self.region != "global":
+            self.run_test(self.service_name, regional_tests, self.shipper, self.region)
         if self.region == "global":
             self._iam_init()
-            try:
-                results = []
-                all_tests, test_names = self._get_all_tests()
-                for cur_test in all_tests:
-                    cur_results = cur_test()
-                    if type(cur_results) is list:
-                        for cur_result in cur_results:
-                            results.append(cur_result)
-                    else:
-                        results.append(cur_results)
-                if results and len(results) > 0:
-                    print(
-                        f" INFO 🔵 {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix")
-                    self.shipper(results)
-                else:
-                    print(f" INFO 🔵 {self.service_name} :: No logs found")
-
-            except Exception as e:
-                if e:
-                    print(f"ERROR ⭕️ {self.service_name} :: {e}")
-                    exit(8)
-        else:
-            pass
+            self.run_test(self.service_name, global_tests, self.shipper, self.region)

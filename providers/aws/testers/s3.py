@@ -1,10 +1,10 @@
 import inspect
+import json
+
 from providers.aws.aws import AWSTesters
 from botocore.exceptions import ClientError
 
 """
-ACLs should not be used to manage user access to S3 general purpose buckets
-S3 general purpose buckets should be encrypted at rest with AWS KMS keys
 S3 access points should have block public access settings enabled
 S3 general purpose buckets should block public read access
 S3 general purpose buckets should have MFA delete enabled
@@ -12,6 +12,7 @@ S3 general purpose buckets should log object-level write events
 S3 general purpose buckets should log object-level read events
 S3 Multi-Region Access Points should have block public access settings enabled
 S3 general purpose buckets should block public write access
+ACLs should not be used to manage user access to S3 general purpose buckets
 S3 general purpose buckets should require requests to use SSL
 S3 general purpose bucket policies should restrict access to other AWS accounts
 S3 general purpose buckets should use cross-Region replication
@@ -28,7 +29,9 @@ class Service(AWSTesters):
         self.region = region
         self.shipper = shipper.send_bulk
         self.s3_client = client("s3")
+        self.s3control_client = client("s3control", self.region)
         self.all_bucket_names = None
+        self.all_access_points = None
         self.buckets_with_lifecycle_configuration_enabled = []
         self.buckets_with_versioning_enabled = []
 
@@ -37,7 +40,12 @@ class Service(AWSTesters):
         if "Buckets" in all_buckets:
             self.all_bucket_names = [bucket_name["Name"] for bucket_name in all_buckets["Buckets"]]
 
-    def test_buckets_should_have_block_public_access_settings_enabled(self):
+    def _access_point_init(self):
+        all_access_points = self.s3control_client.list_access_points(AccountId=self.account_id)
+        if "AccessPointList" in all_access_points:
+            self.all_access_points = all_access_points["AccessPointList"]
+
+    def global_test_buckets_should_have_block_public_access_settings_enabled(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -73,7 +81,7 @@ class Service(AWSTesters):
                 print(f"ERROR ⭕️ {self.service_name} :: {e}")
         return results
 
-    def test_buckets_should_have_versioning_enabled(self):
+    def global_test_buckets_should_have_versioning_enabled(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -90,7 +98,7 @@ class Service(AWSTesters):
                                                       self.region, True))
         return results
 
-    def test_buckets_should_have_lifecycle_configurations(self):
+    def global_test_buckets_should_have_lifecycle_configurations(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -116,7 +124,7 @@ class Service(AWSTesters):
                     print(f'ERROR ⭕️ Failed to check bucket "{bucket_name}" - {e}')
         return results
 
-    def test_buckets_should_have_object_lock_enabled(self):
+    def global_test_buckets_should_have_object_lock_enabled(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -138,10 +146,10 @@ class Service(AWSTesters):
                                                           self.account_id, self.service_name, test_name, bucket_name,
                                                           self.region, True))
                 else:
-                    print(f'Error checking bucket "{bucket_name}": {e}')
+                    print(f'ERROR ⭕️ Failed to check bucket "{bucket_name}" - {e}')
         return results
 
-    def test_buckets_with_versioning_enabled_should_have_lifecycle_configurations(self):
+    def global_test_buckets_with_versioning_enabled_should_have_lifecycle_configurations(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -157,7 +165,7 @@ class Service(AWSTesters):
                                                           versioned_bucket, self.region, True))
         return results
 
-    def test_buckets_should_have_event_notifications_enabled(self):
+    def global_test_buckets_should_have_event_notifications_enabled(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
@@ -174,29 +182,58 @@ class Service(AWSTesters):
                                                       self.region, True))
         return results
 
-    def run(self):
-        if self.region == "global":
-            self._s3_init()
-            try:
-                results = []
-                all_tests, test_names = self._get_all_tests()
-                for cur_test in all_tests:
-                    cur_results = cur_test()
-                    if type(cur_results) is list:
-                        for cur_result in cur_results:
-                            results.append(cur_result)
-                    else:
-                        results.append(cur_results)
-                if results and len(results) > 0:
-                    print(
-                        f" INFO 🔵 {self.service_name} :: 📨 Sending {len(results)} logs to Coralogix")
-                    self.shipper(results)
-                else:
-                    print(f" INFO 🔵 {self.service_name} :: No logs found")
+    def global_test_buckets_should_be_encrypted_at_rest_with_aws_kms_keys(self):
+        test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
-            except Exception as e:
-                if e:
-                    print(f"ERROR ⭕️ {self.service_name} :: {e}")
-                    exit(8)
-        else:
-            pass
+        results = []
+        for bucket_name in self.all_bucket_names:
+            bucket_encryption = self.s3_client.get_bucket_encryption(Bucket=bucket_name)
+            if "ServerSideEncryptionConfiguration" in bucket_encryption \
+                    and "Rules" in bucket_encryption["ServerSideEncryptionConfiguration"]:
+                for rule in bucket_encryption["ServerSideEncryptionConfiguration"]["Rules"]:
+                    if "BucketKeyEnabled" in rule:
+                        if rule["BucketKeyEnabled"]:
+                            results.append(self._generate_results(self.execution_id,
+                                                                  self.account_id, self.service_name, test_name,
+                                                                  bucket_name,
+                                                                  self.region, False))
+                        else:
+                            results.append(self._generate_results(self.execution_id,
+                                                                  self.account_id, self.service_name, test_name,
+                                                                  bucket_name,
+                                                                  self.region, True))
+        return results
+
+    def test_s3_access_points_should_have_block_public_access_settings_enabled(self):
+        test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
+
+        results = []
+        if self.all_access_points and len(self.all_access_points) > 0:
+            for access_point in self.all_access_points:
+                access_point_name = access_point["Name"]
+                get_access_point = self.s3control_client.get_access_point(AccountId=self.account_id, Name=access_point_name)
+                public_access_settings_enabled = True
+                if "PublicAccessBlockConfiguration" in get_access_point:
+                    for public_access_name, public_access_setting in get_access_point["PublicAccessBlockConfiguration"].items():
+                        if not public_access_setting:
+                            public_access_settings_enabled = False
+                if public_access_settings_enabled:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name,
+                                                          access_point_name,
+                                                          self.region, False))
+                else:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name,
+                                                          access_point_name,
+                                                          self.region, True))
+        return results
+
+    def run(self):
+        global_tests, regional_tests = self._get_all_tests()
+        self._s3_init()
+        if self.region != "global":
+            self._access_point_init()
+            self.run_test(self.service_name, regional_tests, self.shipper, self.region)
+        if self.region == "global":
+            self.run_test(self.service_name, global_tests, self.shipper, self.region)

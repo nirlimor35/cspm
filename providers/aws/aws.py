@@ -1,5 +1,5 @@
-import re
 import boto3
+import json
 from providers.aws.aws_request_throttling_handler import handle_request
 
 
@@ -37,13 +37,37 @@ class AWSTesters:
         }
 
     def _get_all_tests(self):
-        test_names = []
-        tests = list()
+        global_tests = list()
+        regional_tests = list()
         for method_name in dir(self):
-            if method_name.startswith("test_"):
-                cur_test_name = re.search(r"test_(\S+)", str(method_name)).group(1)
-                test_names.append(cur_test_name)
+            if method_name.startswith("global_test_"):
                 method = getattr(self, method_name)
                 if callable(method):
-                    tests.append(method)
-        return tests, test_names
+                    global_tests.append(method)
+            elif method_name.startswith("test_"):
+                method = getattr(self, method_name)
+                if callable(method):
+                    regional_tests.append(method)
+        return global_tests, regional_tests
+
+    @staticmethod
+    def run_test(service_name, all_tests, shipper, region):
+        try:
+            results = []
+            for cur_test in all_tests:
+                cur_results = cur_test()
+                if type(cur_results) is list:
+                    for cur_result in cur_results:
+                        results.append(cur_result)
+                else:
+                    results.append(cur_results)
+            if results and len(results) > 0:
+                # print(json.dumps(results, indent=2))
+                print(f" INFO 🔵 {service_name} :: 📨 Sending {len(results)} logs to Coralogix for {region} region")
+                shipper(results)
+            else:
+                pass
+                # print(f" INFO 🔵 {service_name} :: No logs found for {region}")
+        except Exception as e:
+            print(f"ERROR ⭕️ {service_name} :: {e}")
+            exit(8)
