@@ -62,11 +62,12 @@ class AWSTesters:
                 else:
                     results.append(cur_results)
             if results and len(results) > 0:
+                # print(json.dumps(results, indent=2))
                 print(f" INFO 🔵 {service_name} :: 📨 Sending {len(results)} logs to Coralogix for {region} region")
                 shipper(results)
             else:
-                # pass
-                print(f" INFO 🔵 {service_name} :: No logs found for {region}")
+                pass
+                # print(f" INFO 🔵 {service_name} :: No logs found for {region}")
         except Exception as e:
             print(f"ERROR ⭕️ {service_name} :: {e}")
             exit(8)
