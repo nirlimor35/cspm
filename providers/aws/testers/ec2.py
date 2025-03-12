@@ -3,37 +3,28 @@ from providers.aws.aws import AWSTesters
 
 """
 Amazon EC2 should be configured to use VPC endpoints that are created for the Amazon EC2 service
-EC2 subnets should not automatically assign public IP addresses
-EC2 instances should not use multiple ENIs
-EC2 VPN connections should have logging enabled
-EC2 VPC Block Public Access settings should block internet gateway traffic
-EC2 Transit Gateways should not automatically accept VPC attachment requests
-EC2 paravirtual instance types should not be used
-EC2 launch templates should not assign public IPs to network interfaces
-EC2 transit gateway attachments should be tagged
-EC2 transit gateway route tables should be tagged
-EC2 network interfaces should be tagged
-EC2 customer gateways should be tagged
-EC2 Elastic IP addresses should be tagged
-EC2 internet gateways should be tagged
-Stopped EC2 instances should be removed after a specified time period
-EC2 NAT gateways should be tagged
-EC2 network ACLs should be tagged
-EC2 route tables should be tagged
-EC2 subnets should be tagged
-EC2 volumes should be tagged
-EC2 VPN gateways should be tagged
 EC2 Client VPN endpoints should have client connection logging enabled
-EC2 transit gateways should be tagged
-EC2 security groups should not allow ingress from 0.0.0.0/0 to remote server administration ports
-EC2 security groups should not allow ingress from ::/0 to remote server administration ports
-EC2 default security groups should not allow inbound or outbound traffic
-EC2 instances should use Instance Metadata Service Version 2 (IMDSv2)
+EC2 Transit Gateways should not automatically accept VPC attachment requests
 EC2 VPC Block Public Access settings should block internet gateway traffic
-EC2 instances should not have a public IPv4 address
-EC2 instances should be managed by AWS Systems Manager
+EC2 VPC Block Public Access settings should block internet gateway traffic
+EC2 VPN connections should have logging enabled
+EC2 default security groups should not allow inbound or outbound traffic
 EC2 instances managed by Systems Manager should have a patch compliance status of COMPLIANT after a patch installation
 EC2 instances managed by Systems Manager should have an association compliance status of COMPLIANT
+EC2 instances should be managed by AWS Systems Manager
+EC2 instances should not have a public IPv4 address
+EC2 instances should not use multiple ENIs
+EC2 instances should use Instance Metadata Service Version 2 (IMDSv2)
+EC2 launch templates should not assign public IPs to network interfaces
+EC2 paravirtual instance types should not be used
+EC2 security groups should not allow ingress from 0.0.0.0/0 to remote server administration ports
+EC2 security groups should not allow ingress from ::/0 to remote server administration ports
+EC2 subnets should not automatically assign public IP addresses
+EC2 transit gateway attachments should be tagged
+EC2 transit gateway route tables should be tagged
+EC2 transit gateways should be tagged
+EC2 volumes should be tagged
+Stopped EC2 instances should be removed after a specified time period
 """
 
 

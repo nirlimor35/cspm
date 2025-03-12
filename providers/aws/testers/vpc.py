@@ -1,6 +1,18 @@
 import inspect
 from providers.aws.aws import AWSTesters
 
+"""
+VPC subnets should be tagged
+EC2 network interfaces should be tagged
+EC2 customer gateways should be tagged
+EC2 Elastic IP addresses should be tagged
+EC2 internet gateways should be tagged
+EC2 NAT gateways should be tagged
+EC2 network ACLs should be tagged
+EC2 route tables should be tagged
+EC2 VPN gateways should be tagged
+"""
+
 
 class Service(AWSTesters):
     def __init__(self, execution_id, client, account_id, region, shipper):
