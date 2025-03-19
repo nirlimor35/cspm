@@ -13,7 +13,7 @@ class CSPM:
     def __init__(self):
         self.platform = os.getenv("PLATFORM")
         self.cx_endpoint = self.coralogix_endpoint_convert(os.getenv("CX_ENDPOINT", "EU1"))
-        self.api_key = os.getenv("API_KEY")
+        self.cx_api_key = os.getenv("CX_API_KEY")
         self.code_dir = os.path.dirname(__file__)
         self.cloud_provider = providers.get_cloud_provider()
         self.profile = os.getenv("AWS_PROFILE")
@@ -118,7 +118,7 @@ class CSPM:
                     if self.platform == "coralogix":
                         shipper = SendToCoralogix(
                             endpoint=self.cx_endpoint,
-                            api_key=self.api_key,
+                            api_key=self.cx_api_key,
                             application="CSPM",
                             subsystem=cur_service_name
                         )

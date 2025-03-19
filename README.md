@@ -76,7 +76,7 @@ docker run --rm \
   -e CLOUD_PROVIDER="aws" \
   -e PLATFORM=coralogix \
   -e CX_ENDPOINT=EU1 \
-  -e API_KEY=123 \
+  -e CX_API_KEY=123 \
   -e AWS_REGIONS= \
   -e AWS_SERVICES= \
   --network host \
