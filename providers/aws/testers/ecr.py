@@ -1,5 +1,8 @@
 import json
+import docker
+import base64
 import inspect
+import subprocess
 from providers.aws.aws import AWSTesters
 
 """
@@ -105,6 +108,55 @@ class Service(AWSTesters):
             results.append(self._generate_results(self.execution_id,
                                                   self.account_id, self.service_name, test_name,
                                                   "ecr", self.region, True))
+        return results
+
+    def test_images_vulnerability_scan(self):
+        test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
+
+        results = []
+        if self.all_repositories_names and len(self.all_repositories_names) > 0:
+            for repository_name in self.all_repositories_names:
+                auth_response = self.ecr_client.get_authorization_token()
+                auth_data = auth_response["authorizationData"][0]
+                token = base64.b64decode(auth_data["authorizationToken"]).decode()
+                username, password = token.split(":")
+                registry = auth_data["proxyEndpoint"].replace("https://", "")
+
+                docker_client = docker.from_env()
+                docker_client.login(username=username, password=password, registry=registry)
+                full_image_name = f"{registry}/{repository_name}:latest"
+                docker_client.images.pull(full_image_name)
+
+                cmd = ["grype", full_image_name, "--output", "json"]
+                completed_process = subprocess.run(cmd, capture_output=True, text=True)
+                findings = None
+                if completed_process.returncode == 0:
+                    try:
+                        parsed_output = json.loads(completed_process.stdout)
+                        if "matches" in parsed_output:
+                            findings = parsed_output["matches"]
+                    except json.JSONDecodeError as e:
+                        print(f"ERROR ⭕️ {self.service_name} :: Failed to parse output as JSON - {e}")
+                else:
+                    print(
+                        f"""ERROR ⭕️ {self.service_name} :: Grype failed with error code {completed_process.returncode}:
+{completed_process.stderr}""")
+                docker.from_env().images.remove(full_image_name)
+
+                if findings and len(findings) > 0:
+                    for cur_fin in findings:
+                        additional_data = {
+                            "binary": cur_fin["artifact"]["name"],
+                            "cur_version": cur_fin["artifact"]["version"],
+                            "cve_id": cur_fin["vulnerability"]["id"],
+                            "url": cur_fin["vulnerability"]["dataSource"],
+                            "severity": cur_fin["vulnerability"]["severity"],
+                            "state": cur_fin["vulnerability"]["fix"]["state"],
+                            "fixed_versions": cur_fin["vulnerability"]["fix"]["versions"]
+                        }
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name,
+                                                              repository_name, self.region, True, additional_data))
         return results
 
     def run(self):

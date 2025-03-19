@@ -10,7 +10,7 @@ from utils.coralogix import SendToCoralogix
 
 
 class CSPM:
-    def __init__(self, profile=None):
+    def __init__(self):
         self.platform = os.getenv("PLATFORM")
         self.cx_endpoint = self.coralogix_endpoint_convert(os.getenv("CX_ENDPOINT", "EU1"))
         self.api_key = os.getenv("API_KEY")
