@@ -15,6 +15,53 @@ Currently covering
 With a total of 77 unique tests 
 
 The current output can potentially vary, currently only supports Coralogix.  
+## Prerequisites 
+Set up the following policy in AWS 
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CSPM",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetAccountPasswordPolicy",
+        "ec2:DescribeAddresses",
+        "ec2:DescribeInstances",
+        "iam:ListRoleTags",
+        "cloudtrail:GetTrailStatus",
+        "ec2:DescribeFlowLogs",
+        "sns:ListTopics",
+        "ec2:DescribeVpcEndpointServices",
+        "cloudtrail:GetEventSelectors",
+        "iam:ListMFADevices",
+        "guardduty:GetDetector",
+        "cloudtrail:ListTags",
+        "iam:ListAttachedUserPolicies",
+        "iam:ListAccessKeys",
+        "sns:ListTagsForResource",
+        "guardduty:ListDetectors",
+        "sns:GetTopicAttributes",
+        "ec2:DescribeLaunchTemplates",
+        "ec2:DescribeVpcPeeringConnections",
+        "ec2:DescribeLaunchTemplateVersions",
+        "iam:GetAccessKeyLastUsed",
+        "iam:ListRoles",
+        "iam:ListUserPolicies",
+        "cloudtrail:DescribeTrails",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeVpcs",
+        "iam:ListUsers",
+        "ec2:DescribeVpcEndpoints",
+        "iam:GetUser",
+        "iam:GetLoginProfile",
+        "secretsmanager:ListSecrets"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
 
 ## Usage
 Build the image
