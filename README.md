@@ -1,4 +1,20 @@
 # CSPM
+This PoC CSPM is designed to catch a verity of misconfigurations and security exposures in AWS
+
+Currently covering
+* cloudtrail
+* ec2
+* ecr
+* guardduty
+* iam
+* s3
+* secret_manager
+* sns
+* vpc
+
+With a total of 77 unique tests 
+
+The current output can potentially vary, currently only supports Coralogix.  
 
 ## Usage
 Build the image
