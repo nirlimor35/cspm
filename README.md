@@ -25,6 +25,8 @@ Set up the following policy in AWS
       "Sid": "CSPM",
       "Effect": "Allow",
       "Action": [
+        "autoscaling:DescribeAutoScalingGroups",
+        "autoscaling:DescribeLaunchConfigurations"
         "cloudtrail:ListTags",
         "cloudtrail:GetTrailStatus",
         "cloudtrail:GetEventSelectors",
@@ -38,7 +40,12 @@ Set up the following policy in AWS
         "ec2:DescribeLaunchTemplateVersions",
         "ec2:DescribeSecurityGroups",
         "ec2:DescribeVpcs",
+        "ec2:DescribeRegions",
         "ec2:DescribeVpcEndpoints",
+        "ecr:DescribeRepositories",
+        "ecr:GetLifecyclePolicy",
+        "ecr:GetRegistryScanningConfiguration",
+        "ecr:GetAuthorizationToken"
         "guardduty:ListDetectors",
         "guardduty:GetDetector",
         "iam:GetAccountPasswordPolicy",
@@ -52,10 +59,17 @@ Set up the following policy in AWS
         "iam:ListUsers",
         "iam:GetUser",
         "iam:GetLoginProfile",
+        "s3:GetBucketPublicAccessBlock",
+        "s3:GetBucketObjectLockConfiguration",
+        "s3:GetEncryptionConfiguration",
+        "s3:GetLifecycleConfiguration",
+        "s3:ListAllMyBuckets",
+        "s3:GetBucketVersioning",
+        "s3:GetBucketNotification",
+        "secretsmanager:ListSecrets",
         "sns:ListTagsForResource",
         "sns:ListTopics",
         "sns:GetTopicAttributes",
-        "secretsmanager:ListSecrets"
       ],
       "Resource": "*"
     }
