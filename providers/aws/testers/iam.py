@@ -32,18 +32,21 @@ class Service(AWSTesters):
         self.password_policy_score = 0
 
     def _iam_init(self):
-        account_password_policy = self.iam_client.get_account_password_policy()
-        self.password_policy = account_password_policy[
-            "PasswordPolicy"] if "PasswordPolicy" in account_password_policy else None
+        try:
+            account_password_policy = self.iam_client.get_account_password_policy()
+            self.password_policy = account_password_policy[
+                "PasswordPolicy"] if "PasswordPolicy" in account_password_policy else None
 
-        list_users_response = self.iam_client.list_users()
-        self.iam_users = list_users_response["Users"] if "Users" in list_users_response else None
+            list_users_response = self.iam_client.list_users()
+            self.iam_users = list_users_response["Users"] if "Users" in list_users_response else None
 
-        roles = []
-        paginator = self.iam_client.get_paginator('list_roles')
-        for page in paginator.paginate():
-            roles.extend(page['Roles'])
-        self.roles = roles
+            roles = []
+            paginator = self.iam_client.get_paginator('list_roles')
+            for page in paginator.paginate():
+                roles.extend(page['Roles'])
+            self.roles = roles
+        except Exception as e:
+            print(f"ERROR ⭕ {self.service_name} :: {e}")
 
     def _access_analyzer_init(self):
         access_analyzers = self.access_analyzer_client.list_analyzers()
@@ -140,15 +143,18 @@ class Service(AWSTesters):
         results = []
         user_names = [user["UserName"] for user in self.iam_users]
         for user_name in user_names:
-            mfa_device_for_user = self.iam_client.list_mfa_devices(UserName=user_name)
-            if "MFADevices" in mfa_device_for_user and len(mfa_device_for_user["MFADevices"]) > 0:
-                results.append(self._generate_results(self.execution_id,
-                                                      self.account_id, self.service_name, test_name, user_name,
-                                                      self.region, False))
-            else:
-                results.append(self._generate_results(self.execution_id,
-                                                      self.account_id, self.service_name, test_name, user_name,
-                                                      self.region, True))
+            try:
+                mfa_device_for_user = self.iam_client.list_mfa_devices(UserName=user_name)
+                if "MFADevices" in mfa_device_for_user and len(mfa_device_for_user["MFADevices"]) > 0:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, user_name,
+                                                          self.region, False))
+                else:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, user_name,
+                                                          self.region, True))
+            except Exception as e:
+                print(f"ERROR ⭕ {self.service_name} :: {e}")
         return results
 
     def global_test_mfa_should_be_enabled_for_users_with_console_access(self):
@@ -183,15 +189,18 @@ class Service(AWSTesters):
         results = []
         user_names = [user["UserName"] for user in self.iam_users]
         for user_name in user_names:
-            user_details = self.iam_client.get_user(UserName=user_name)["User"]
-            if "Tags" in user_details:
-                results.append(self._generate_results(self.execution_id,
-                                                      self.account_id, self.service_name, test_name, user_name,
-                                                      self.region, False, {"tags": user_details["Tags"]}))
-            else:
-                results.append(self._generate_results(self.execution_id,
-                                                      self.account_id, self.service_name, test_name, user_name,
-                                                      self.region, True))
+            try:
+                user_details = self.iam_client.get_user(UserName=user_name)["User"]
+                if "Tags" in user_details:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, user_name,
+                                                          self.region, False, {"tags": user_details["Tags"]}))
+                else:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, user_name,
+                                                          self.region, True))
+            except Exception as e:
+                print(f"ERROR ⭕ {self.service_name} :: {e}")
         return results
 
     def global_test_iam_roles_should_be_tagged(self):
@@ -199,15 +208,18 @@ class Service(AWSTesters):
         results = []
         role_names = [role["RoleName"] for role in self.roles]
         for role_name in role_names:
-            role_tags = self.iam_client.list_role_tags(RoleName=role_name)
-            if "Tags" in role_tags and len(role_tags["Tags"]) > 0:
-                results.append(self._generate_results(self.execution_id,
-                                                      self.account_id, self.service_name, test_name, role_name,
-                                                      self.region, False, {"tags": role_tags["Tags"]}))
-            else:
-                results.append(self._generate_results(self.execution_id,
-                                                      self.account_id, self.service_name, test_name, role_name,
-                                                      self.region, True, {"tags": role_tags["Tags"]}))
+            try:
+                role_tags = self.iam_client.list_role_tags(RoleName=role_name)
+                if "Tags" in role_tags and len(role_tags["Tags"]) > 0:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, role_name,
+                                                          self.region, False, {"tags": role_tags["Tags"]}))
+                else:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, role_name,
+                                                          self.region, True, {"tags": role_tags["Tags"]}))
+            except Exception as e:
+                print(f"ERROR ⭕ {self.service_name} :: {e}")
         return results
 
     def global_test_iam_users_should_not_have_iam_policies_attached(self):
@@ -217,25 +229,28 @@ class Service(AWSTesters):
         user_names = [user["UserName"] for user in self.iam_users]
         for user_name in user_names:
             existing_user_policies = False
-            user_policies = self.iam_client.list_user_policies(UserName=user_name)
-            if "PolicyNames" in user_policies and len(user_policies["PolicyNames"]) > 0:
-                existing_user_policies = True
+            try:
+                user_policies = self.iam_client.list_user_policies(UserName=user_name)
+                if "PolicyNames" in user_policies and len(user_policies["PolicyNames"]) > 0:
+                    existing_user_policies = True
 
-            existing_user_attached_policies = False
-            user_attached_policies = self.iam_client.list_attached_user_policies(UserName=user_name)
-            if "AttachedPolicies" in user_attached_policies and len(user_attached_policies["AttachedPolicies"]) > 0:
-                existing_user_attached_policies = True
+                existing_user_attached_policies = False
+                user_attached_policies = self.iam_client.list_attached_user_policies(UserName=user_name)
+                if "AttachedPolicies" in user_attached_policies and len(user_attached_policies["AttachedPolicies"]) > 0:
+                    existing_user_attached_policies = True
 
-            additional_data = {"user_policies": user_policies["PolicyNames"],
-                               "user_attached_policies": user_attached_policies["AttachedPolicies"]}
-            if existing_user_policies or existing_user_attached_policies:
-                results.append(self._generate_results(self.execution_id,
-                                                      self.account_id, self.service_name, test_name, user_name,
-                                                      self.region, True, additional_data))
-            else:
-                results.append(self._generate_results(self.execution_id,
-                                                      self.account_id, self.service_name, test_name, user_name,
-                                                      self.region, False, additional_data))
+                additional_data = {"user_policies": user_policies["PolicyNames"],
+                                   "user_attached_policies": user_attached_policies["AttachedPolicies"]}
+                if existing_user_policies or existing_user_attached_policies:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, user_name,
+                                                          self.region, True, additional_data))
+                else:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, user_name,
+                                                          self.region, False, additional_data))
+            except Exception as e:
+                print(f"ERROR ⭕ {self.service_name} :: {e}")
         return results
 
     def global_test_iam_user_credentials_unused_for_45_days_should_be_removed(self):
@@ -250,15 +265,17 @@ class Service(AWSTesters):
             password_last_used = user.get('PasswordLastUsed')
             if password_last_used and password_last_used >= threshold_date:
                 user_unused = False
+            try:
+                access_keys = self.iam_client.list_access_keys(UserName=user_name)['AccessKeyMetadata']
+                for key in access_keys:
+                    key_id = key['AccessKeyId']
+                    last_used_response = self.iam_client.get_access_key_last_used(AccessKeyId=key_id)
+                    last_used_date = last_used_response['AccessKeyLastUsed'].get('LastUsedDate')
 
-            access_keys = self.iam_client.list_access_keys(UserName=user_name)['AccessKeyMetadata']
-            for key in access_keys:
-                key_id = key['AccessKeyId']
-                last_used_response = self.iam_client.get_access_key_last_used(AccessKeyId=key_id)
-                last_used_date = last_used_response['AccessKeyLastUsed'].get('LastUsedDate')
-
-                if last_used_date and last_used_date >= threshold_date:
-                    user_unused = False
+                    if last_used_date and last_used_date >= threshold_date:
+                        user_unused = False
+            except Exception as e:
+                print(f"ERROR ⭕ {self.service_name} :: {e}")
 
             if user_unused:
                 results.append(self._generate_results(self.execution_id,
@@ -278,15 +295,18 @@ class Service(AWSTesters):
         for user in self.iam_users:
             user_name = user['UserName']
             old_keys = []
-            access_keys = self.iam_client.list_access_keys(UserName=user_name)['AccessKeyMetadata']
-            for key in access_keys:
-                key_id = key['AccessKeyId']
-                created_date = key['CreateDate']
-                if created_date < threshold_date:
-                    old_keys.append({
-                        'AccessKeyId': key_id,
-                        'CreateDate': created_date.strftime('%Y-%m-%d')
-                    })
+            try:
+                access_keys = self.iam_client.list_access_keys(UserName=user_name)['AccessKeyMetadata']
+                for key in access_keys:
+                    key_id = key['AccessKeyId']
+                    created_date = key['CreateDate']
+                    if created_date < threshold_date:
+                        old_keys.append({
+                            'AccessKeyId': key_id,
+                            'CreateDate': created_date.strftime('%Y-%m-%d')
+                        })
+            except Exception as e:
+                print(f"ERROR ⭕ {self.service_name} :: {e}")
             additional_data = {"access_keys": old_keys}
             if old_keys and len(old_keys) > 0:
                 results.append(self._generate_results(self.execution_id,

@@ -14,9 +14,12 @@ class Service(AWSTesters):
         self.list_secrets = None
 
     def _init_secret_manager(self):
-        list_secrets = self.secrets_manager_client.list_secrets()
-        if "SecretList" in list_secrets:
-            self.list_secrets = list_secrets["SecretList"]
+        try:
+            list_secrets = self.secrets_manager_client.list_secrets()
+            if "SecretList" in list_secrets:
+                self.list_secrets = list_secrets["SecretList"]
+        except Exception as e:
+            print(f"ERROR ⭕ {self.service_name} :: {e}")
 
     def test_secrets_should_have_automatic_rotation_enabled(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]

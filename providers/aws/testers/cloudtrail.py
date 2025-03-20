@@ -16,9 +16,12 @@ class Service(AWSTesters):
         self.trail_list = None
 
     def _init_cloudtrail(self):
-        trail_list = self.cloudtrail_client("cloudtrail").describe_trails()
-        if "trailList" in trail_list:
-            self.trail_list = trail_list["trailList"]
+        try:
+            trail_list = self.cloudtrail_client("cloudtrail").describe_trails()
+            if "trailList" in trail_list:
+                self.trail_list = trail_list["trailList"]
+        except Exception as e:
+            print(f"ERROR ⭕ {self.service_name} :: {e}")
 
     def global_test_cloudtrail_should_be_enabled_and_configured_with_at_least_one_multi_region_trail_that_includes_read_and_write_management_events(
             self):
@@ -31,34 +34,37 @@ class Service(AWSTesters):
                 region = trail["HomeRegion"]
                 additional_data = {"home_region": region}
 
-                status = self.cloudtrail_client("cloudtrail", region).get_trail_status(Name=trail_name)
-                event_selectors = self.cloudtrail_client("cloudtrail", region).get_event_selectors(TrailName=trail_name)
-                if "EventSelectors" in event_selectors:
-                    event_selectors = event_selectors["EventSelectors"]
-                elif "AdvancedEventSelectors" in event_selectors:
-                    event_selectors = event_selectors["AdvancedEventSelectors"]
-                is_enabled = status['IsLogging']
-                is_multi_region = trail['IsMultiRegionTrail']
+                try:
+                    status = self.cloudtrail_client("cloudtrail", region).get_trail_status(Name=trail_name)
+                    event_selectors = self.cloudtrail_client("cloudtrail", region).get_event_selectors(TrailName=trail_name)
+                    if event_selectors and "EventSelectors" in event_selectors:
+                        event_selectors = event_selectors["EventSelectors"]
+                    elif "AdvancedEventSelectors" in event_selectors:
+                        event_selectors = event_selectors["AdvancedEventSelectors"]
+                    is_enabled = status['IsLogging']
+                    is_multi_region = trail['IsMultiRegionTrail']
 
-                logs_read__or_write_only = False
-                for field_selector in event_selectors:
-                    for k, v in field_selector.items():
-                        if k == "FieldSelectors":
-                            read_only = [f for f in v if f["Field"] == "readOnly"]
-                            if read_only and len(read_only) > 0:
-                                additional_data.update({"field_selector": field_selector["FieldSelectors"]})
-                                logs_read__or_write_only = True
+                    logs_read__or_write_only = False
+                    for field_selector in event_selectors:
+                        for k, v in field_selector.items():
+                            if k == "FieldSelectors":
+                                read_only = [f for f in v if f["Field"] == "readOnly"]
+                                if read_only and len(read_only) > 0:
+                                    additional_data.update({"field_selector": field_selector["FieldSelectors"]})
+                                    logs_read__or_write_only = True
 
-                if is_enabled and is_multi_region and not logs_read__or_write_only:
-                    results.append(self._generate_results(self.execution_id,
-                                                          self.account_id, self.service_name, test_name, trail_name,
-                                                          self.region, False,
-                                                          additional_data))
-                else:
-                    results.append(self._generate_results(self.execution_id,
-                                                          self.account_id, self.service_name, test_name, trail_name,
-                                                          self.region, True,
-                                                          additional_data))
+                    if is_enabled and is_multi_region and not logs_read__or_write_only:
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name, trail_name,
+                                                              self.region, False,
+                                                              additional_data))
+                    else:
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name, trail_name,
+                                                              self.region, True,
+                                                              additional_data))
+                except Exception as e:
+                    print(f"ERROR ⭕ {self.service_name} :: {e}")
         return results
 
     def global_test_trail_should_have_encryption_at_rest_enabled(self):
@@ -153,23 +159,26 @@ class Service(AWSTesters):
                 trail_arn = trail["TrailARN"]
                 region = trail["HomeRegion"]
                 additional_data = {"home_region": region}
-                resource_tag_list = self.cloudtrail_client("cloudtrail", region).list_tags(ResourceIdList=[trail_arn])
+                try:
+                    resource_tag_list = self.cloudtrail_client("cloudtrail", region).list_tags(ResourceIdList=[trail_arn])
 
-                if "ResourceTagList" in resource_tag_list:
-                    cur_resource_tag_list = resource_tag_list["ResourceTagList"][0]
-                    if "TagsList" in cur_resource_tag_list:
-                        trail_tags = cur_resource_tag_list["TagsList"]
-                        if trail_tags and len(trail_tags) > 0:
-                            additional_data.update({"trail_tags": trail_tags})
-                            results.append(self._generate_results(self.execution_id,
-                                                                  self.account_id, self.service_name, test_name,
-                                                                  trail_name, self.region, False,
-                                                                  additional_data))
-                        else:
-                            results.append(self._generate_results(self.execution_id,
-                                                                  self.account_id, self.service_name, test_name,
-                                                                  trail_name, self.region, True,
-                                                                  additional_data))
+                    if resource_tag_list and "ResourceTagList" in resource_tag_list:
+                        cur_resource_tag_list = resource_tag_list["ResourceTagList"][0]
+                        if "TagsList" in cur_resource_tag_list:
+                            trail_tags = cur_resource_tag_list["TagsList"]
+                            if trail_tags and len(trail_tags) > 0:
+                                additional_data.update({"trail_tags": trail_tags})
+                                results.append(self._generate_results(self.execution_id,
+                                                                      self.account_id, self.service_name, test_name,
+                                                                      trail_name, self.region, False,
+                                                                      additional_data))
+                            else:
+                                results.append(self._generate_results(self.execution_id,
+                                                                      self.account_id, self.service_name, test_name,
+                                                                      trail_name, self.region, True,
+                                                                      additional_data))
+                except Exception as e:
+                    print(f"ERROR ⭕ {self.service_name} :: {e}")
 
         return results
 

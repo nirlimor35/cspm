@@ -18,16 +18,22 @@ class Service(AWSTesters):
         self.detector_ids = None
 
     def _init_guardduty(self):
-        cur_detectors = self.guardduty_client.list_detectors()
-        if "DetectorIds" in cur_detectors and len(cur_detectors["DetectorIds"]) > 0:
-            self.detector_ids = cur_detectors["DetectorIds"]
+        try:
+            cur_detectors = self.guardduty_client.list_detectors()
+            if "DetectorIds" in cur_detectors and len(cur_detectors["DetectorIds"]) > 0:
+                self.detector_ids = cur_detectors["DetectorIds"]
+        except Exception as e:
+            print(f"ERROR ⭕ {self.service_name} :: {e}")
 
     def _get_detector(self, detector_id):
-        get_detector = self.guardduty_client.get_detector(DetectorId=detector_id)
-        if get_detector and len(get_detector) > 0:
-            return get_detector
-        else:
-            print(f"ERROR ⭕️ {self.service_name} :: Failed to find detector with id '{detector_id}'")
+        try:
+            get_detector = self.guardduty_client.get_detector(DetectorId=detector_id)
+            if get_detector and len(get_detector) > 0:
+                return get_detector
+            else:
+                print(f"ERROR ⭕️ {self.service_name} :: Failed to find detector with id '{detector_id}'")
+        except Exception as e:
+            print(f"ERROR ⭕ {self.service_name} :: {e}")
 
     def _service_run_time_test(self, service, test_name):
         results = []

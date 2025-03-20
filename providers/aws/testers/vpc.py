@@ -27,11 +27,14 @@ class Service(AWSTesters):
         self.vpc_endpoints = None
 
     def _init_vpc(self):
-        describe_vpcs = self.vpc_client.describe_vpcs()
-        if "Vpcs" in describe_vpcs:
-            self.describe_vpcs = describe_vpcs["Vpcs"]
-        self.vpc_flow_logs = self.vpc_client.describe_flow_logs()["FlowLogs"]
-        self.vpc_endpoints = self.vpc_client.describe_vpc_endpoints()["VpcEndpoints"]
+        try:
+            describe_vpcs = self.vpc_client.describe_vpcs()
+            if "Vpcs" in describe_vpcs:
+                self.describe_vpcs = describe_vpcs["Vpcs"]
+            self.vpc_flow_logs = self.vpc_client.describe_flow_logs()["FlowLogs"]
+            self.vpc_endpoints = self.vpc_client.describe_vpc_endpoints()["VpcEndpoints"]
+        except Exception as e:
+            print(f"ERROR ⭕ {self.service_name} :: {e}")
 
     def test_vpcs_should_be_tagged(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
@@ -70,42 +73,48 @@ class Service(AWSTesters):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
-        ep_services = self.vpc_client.describe_vpc_endpoint_services()["ServiceDetails"]
-        for ep_service in ep_services:
-            service_id = ep_service["ServiceId"]
-            additional_data = {"service_name": ep_service["ServiceName"]}
-            if ep_service["Owner"] != "amazon" and ep_service["Owner"] != "aws-marketplace":
-                if "Tags" in ep_service and len(ep_service["Tags"]) > 0:
-                    results.append(self._generate_results(self.execution_id,
-                                                          self.account_id, self.service_name, test_name, service_id,
-                                                          self.region, False, additional_data))
-                else:
-                    results.append(self._generate_results(self.execution_id,
-                                                          self.account_id, self.service_name, test_name, service_id,
-                                                          self.region, True, additional_data))
+        try:
+            ep_services = self.vpc_client.describe_vpc_endpoint_services()["ServiceDetails"]
+            for ep_service in ep_services:
+                service_id = ep_service["ServiceId"]
+                additional_data = {"service_name": ep_service["ServiceName"]}
+                if ep_service["Owner"] != "amazon" and ep_service["Owner"] != "aws-marketplace":
+                    if "Tags" in ep_service and len(ep_service["Tags"]) > 0:
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name, service_id,
+                                                              self.region, False, additional_data))
+                    else:
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name, service_id,
+                                                              self.region, True, additional_data))
+        except Exception as e:
+            print(f"ERROR ⭕ {self.service_name} :: {e}")
         return results
 
     def test_vpc_peering_connections_should_be_tagged(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
-        peerings = self.vpc_client.describe_vpc_peering_connections()
-        if "VpcPeeringConnections" in peerings and len(peerings["VpcPeeringConnections"]) > 0:
-            for peering in peerings["VpcPeeringConnections"]:
-                accepter_vpc_id = peering["AccepterVpcInfo"]["VpcId"]
-                requester_vpc_id = peering["RequesterVpcInfo"]["VpcId"]
-                peering_tags = peering["Tags"]
-                peering_id = peering["VpcPeeringConnectionId"]
-                additional_data = {"accepter_vpc_id": accepter_vpc_id, "requester_vpc_id": requester_vpc_id,
-                                   "peering_tags": peering_tags}
-                if len(peering_tags) > 0:
-                    results.append(self._generate_results(self.execution_id,
-                                                          self.account_id, self.service_name, test_name, peering_id,
-                                                          self.region, False, additional_data))
-                else:
-                    results.append(self._generate_results(self.execution_id,
-                                                          self.account_id, self.service_name, test_name, peering_id,
-                                                          self.region, True, additional_data))
+        try:
+            peerings = self.vpc_client.describe_vpc_peering_connections()
+            if "VpcPeeringConnections" in peerings and len(peerings["VpcPeeringConnections"]) > 0:
+                for peering in peerings["VpcPeeringConnections"]:
+                    accepter_vpc_id = peering["AccepterVpcInfo"]["VpcId"]
+                    requester_vpc_id = peering["RequesterVpcInfo"]["VpcId"]
+                    peering_tags = peering["Tags"]
+                    peering_id = peering["VpcPeeringConnectionId"]
+                    additional_data = {"accepter_vpc_id": accepter_vpc_id, "requester_vpc_id": requester_vpc_id,
+                                       "peering_tags": peering_tags}
+                    if len(peering_tags) > 0:
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name, peering_id,
+                                                              self.region, False, additional_data))
+                    else:
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name, peering_id,
+                                                              self.region, True, additional_data))
+        except Exception as e:
+            print(f"ERROR ⭕ {self.service_name} :: {e}")
         return results
 
     def test_vpc_flow_logging_should_be_enabled_in_all_vpcs(self):

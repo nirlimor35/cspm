@@ -34,9 +34,12 @@ class Service(AWSTesters):
         self.buckets_with_versioning_enabled = []
 
     def _s3_init(self):
-        all_buckets = self.s3_client.list_buckets()
-        if "Buckets" in all_buckets:
-            self.all_bucket_names = [bucket_name["Name"] for bucket_name in all_buckets["Buckets"]]
+        try:
+            all_buckets = self.s3_client.list_buckets()
+            if "Buckets" in all_buckets:
+                self.all_bucket_names = [bucket_name["Name"] for bucket_name in all_buckets["Buckets"]]
+        except Exception as e:
+            print(f"ERROR ⭕ {self.service_name} :: {e}")
 
     def _access_point_init(self):
         all_access_points = self.s3control_client.list_access_points(AccountId=self.account_id)
@@ -84,16 +87,19 @@ class Service(AWSTesters):
 
         results = []
         for bucket_name in self.all_bucket_names:
-            versioning = self.s3_client.get_bucket_versioning(Bucket=bucket_name)
-            if "Status" in versioning and versioning["Status"] == "Enabled":
-                results.append(self._generate_results(self.execution_id,
-                                                      self.account_id, self.service_name, test_name, bucket_name,
-                                                      self.region, False))
-                self.buckets_with_versioning_enabled.append(bucket_name)
-            else:
-                results.append(self._generate_results(self.execution_id,
-                                                      self.account_id, self.service_name, test_name, bucket_name,
-                                                      self.region, True))
+            try:
+                versioning = self.s3_client.get_bucket_versioning(Bucket=bucket_name)
+                if "Status" in versioning and versioning["Status"] == "Enabled":
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, bucket_name,
+                                                          self.region, False))
+                    self.buckets_with_versioning_enabled.append(bucket_name)
+                else:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, bucket_name,
+                                                          self.region, True))
+            except Exception as e:
+                print(f"ERROR ⭕ {self.service_name} :: {e}")
         return results
 
     def global_test_buckets_should_have_lifecycle_configurations(self):
@@ -168,16 +174,19 @@ class Service(AWSTesters):
 
         results = []
         for bucket_name in self.all_bucket_names:
-            response = self.s3_client.get_bucket_notification_configuration(Bucket=bucket_name)
-            del response["ResponseMetadata"]
-            if response and len(response) > 0:
-                results.append(self._generate_results(self.execution_id,
-                                                      self.account_id, self.service_name, test_name, bucket_name,
-                                                      self.region, False, response))
-            else:
-                results.append(self._generate_results(self.execution_id,
-                                                      self.account_id, self.service_name, test_name, bucket_name,
-                                                      self.region, True))
+            try:
+                response = self.s3_client.get_bucket_notification_configuration(Bucket=bucket_name)
+                del response["ResponseMetadata"]
+                if response and len(response) > 0:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, bucket_name,
+                                                          self.region, False, response))
+                else:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name, bucket_name,
+                                                          self.region, True))
+            except Exception as e:
+                print(f"ERROR ⭕ {self.service_name} :: {e}")
         return results
 
     def global_test_buckets_should_be_encrypted_at_rest_with_aws_kms_keys(self):
@@ -185,21 +194,24 @@ class Service(AWSTesters):
 
         results = []
         for bucket_name in self.all_bucket_names:
-            bucket_encryption = self.s3_client.get_bucket_encryption(Bucket=bucket_name)
-            if "ServerSideEncryptionConfiguration" in bucket_encryption \
-                    and "Rules" in bucket_encryption["ServerSideEncryptionConfiguration"]:
-                for rule in bucket_encryption["ServerSideEncryptionConfiguration"]["Rules"]:
-                    if "BucketKeyEnabled" in rule:
-                        if rule["BucketKeyEnabled"]:
-                            results.append(self._generate_results(self.execution_id,
-                                                                  self.account_id, self.service_name, test_name,
-                                                                  bucket_name,
-                                                                  self.region, False))
-                        else:
-                            results.append(self._generate_results(self.execution_id,
-                                                                  self.account_id, self.service_name, test_name,
-                                                                  bucket_name,
-                                                                  self.region, True))
+            try:
+                bucket_encryption = self.s3_client.get_bucket_encryption(Bucket=bucket_name)
+                if "ServerSideEncryptionConfiguration" in bucket_encryption \
+                        and "Rules" in bucket_encryption["ServerSideEncryptionConfiguration"]:
+                    for rule in bucket_encryption["ServerSideEncryptionConfiguration"]["Rules"]:
+                        if "BucketKeyEnabled" in rule:
+                            if rule["BucketKeyEnabled"]:
+                                results.append(self._generate_results(self.execution_id,
+                                                                      self.account_id, self.service_name, test_name,
+                                                                      bucket_name,
+                                                                      self.region, False))
+                            else:
+                                results.append(self._generate_results(self.execution_id,
+                                                                      self.account_id, self.service_name, test_name,
+                                                                      bucket_name,
+                                                                      self.region, True))
+            except Exception as e:
+                print(f"ERROR ⭕ {self.service_name} :: {e}")
         return results
 
     def test_s3_access_points_should_have_block_public_access_settings_enabled(self):

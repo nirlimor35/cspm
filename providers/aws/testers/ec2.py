@@ -109,34 +109,37 @@ class Service(AWSTesters):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
-        all_launch_templates = self.ec2_client.describe_launch_templates()
-        if "LaunchTemplates" in all_launch_templates:
-            for launch_template in all_launch_templates["LaunchTemplates"]:
-                launch_template_name = launch_template["LaunchTemplateName"]
-                launch_template_id = launch_template["LaunchTemplateId"]
-                default_version = launch_template["DefaultVersionNumber"]
-                latest_version = launch_template["LatestVersionNumber"]
+        try:
+            all_launch_templates = self.ec2_client.describe_launch_templates()
+            if all_launch_templates and "LaunchTemplates" in all_launch_templates:
+                for launch_template in all_launch_templates["LaunchTemplates"]:
+                    launch_template_name = launch_template["LaunchTemplateName"]
+                    launch_template_id = launch_template["LaunchTemplateId"]
+                    default_version = launch_template["DefaultVersionNumber"]
+                    latest_version = launch_template["LatestVersionNumber"]
 
-                additional_data = {
-                    "default_version": default_version,
-                    "latest_version": latest_version
-                }
-                describe_cur_version = self._get_launch_templates_version(launch_template_id, default_version)
-                if "LaunchTemplateVersions" in describe_cur_version:
-                    cur_version = describe_cur_version["LaunchTemplateVersions"][0]
-                    if "LaunchTemplateData" in cur_version \
-                            and "MetadataOptions" in cur_version["LaunchTemplateData"] \
-                            and "HttpTokens" in cur_version["LaunchTemplateData"]["MetadataOptions"] \
-                            and cur_version["LaunchTemplateData"]["MetadataOptions"]["HttpTokens"] == "required":
-                        results.append(self._generate_results(self.execution_id,
-                                                              self.account_id, self.service_name, test_name,
-                                                              launch_template_name, self.region, False,
-                                                              additional_data))
-                    else:
-                        results.append(self._generate_results(self.execution_id,
-                                                              self.account_id, self.service_name, test_name,
-                                                              launch_template_name, self.region, True,
-                                                              additional_data))
+                    additional_data = {
+                        "default_version": default_version,
+                        "latest_version": latest_version
+                    }
+                    describe_cur_version = self._get_launch_templates_version(launch_template_id, default_version)
+                    if "LaunchTemplateVersions" in describe_cur_version:
+                        cur_version = describe_cur_version["LaunchTemplateVersions"][0]
+                        if "LaunchTemplateData" in cur_version \
+                                and "MetadataOptions" in cur_version["LaunchTemplateData"] \
+                                and "HttpTokens" in cur_version["LaunchTemplateData"]["MetadataOptions"] \
+                                and cur_version["LaunchTemplateData"]["MetadataOptions"]["HttpTokens"] == "required":
+                            results.append(self._generate_results(self.execution_id,
+                                                                  self.account_id, self.service_name, test_name,
+                                                                  launch_template_name, self.region, False,
+                                                                  additional_data))
+                        else:
+                            results.append(self._generate_results(self.execution_id,
+                                                                  self.account_id, self.service_name, test_name,
+                                                                  launch_template_name, self.region, True,
+                                                                  additional_data))
+        except Exception as e:
+            print(f"ERROR ⭕ {self.service_name} :: {e}")
 
         return results
 
@@ -181,18 +184,21 @@ class Service(AWSTesters):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
-        all_elastic_ips = self.ec2_client.describe_addresses()
-        if "Addresses" in all_elastic_ips:
-            for elastic_ip in all_elastic_ips["Addresses"]:
-                cur_address = elastic_ip["PublicIp"]
-                if "AllocationId" not in elastic_ip:
-                    results.append(self._generate_results(self.execution_id,
-                                                          self.account_id, self.service_name, test_name, cur_address,
-                                                          self.region, True))
-                else:
-                    results.append(self._generate_results(self.execution_id,
-                                                          self.account_id, self.service_name, test_name, cur_address,
-                                                          self.region, False))
+        try:
+            all_elastic_ips = self.ec2_client.describe_addresses()
+            if all_elastic_ips and "Addresses" in all_elastic_ips:
+                for elastic_ip in all_elastic_ips["Addresses"]:
+                    cur_address = elastic_ip["PublicIp"]
+                    if "AllocationId" not in elastic_ip:
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name, cur_address,
+                                                              self.region, True))
+                    else:
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name, cur_address,
+                                                              self.region, False))
+        except Exception as e:
+            print(f"ERROR ⭕ {self.service_name} :: {e}")
         return results
 
     def test_instances_should_be_tagged(self):

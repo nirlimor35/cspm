@@ -14,9 +14,12 @@ class Service(AWSTesters):
         self.list_topics = None
 
     def _init_sns(self):
-        list_topics = self.sns_client.list_topics()
-        if "Topics" in list_topics:
-            self.list_topics = [topic["TopicArn"] for topic in list_topics["Topics"]]
+        try:
+            list_topics = self.sns_client.list_topics()
+            if "Topics" in list_topics:
+                self.list_topics = [topic["TopicArn"] for topic in list_topics["Topics"]]
+        except Exception as e:
+            print(f"ERROR ⭕ {self.service_name} :: {e}")
 
     def test_topics_should_be_tagged(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
@@ -24,18 +27,21 @@ class Service(AWSTesters):
         results = []
         for topic_arn in self.list_topics:
             topic_name = str(topic_arn).split(f"{self.account_id}:")[1]
-            topic_tags = self.sns_client.list_tags_for_resource(ResourceArn=topic_arn)
+            try:
+                topic_tags = self.sns_client.list_tags_for_resource(ResourceArn=topic_arn)
 
-            if "Tags" in topic_tags and len(topic_tags["Tags"]) > 0:
-                results.append(self._generate_results(self.execution_id,
-                                                      self.account_id, self.service_name, test_name,
-                                                      topic_name,
-                                                      self.region, False, {"tags": topic_tags["Tags"]}))
-            else:
-                results.append(self._generate_results(self.execution_id,
-                                                      self.account_id, self.service_name, test_name,
-                                                      topic_name,
-                                                      self.region, True))
+                if "Tags" in topic_tags and len(topic_tags["Tags"]) > 0:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name,
+                                                          topic_name,
+                                                          self.region, False, {"tags": topic_tags["Tags"]}))
+                else:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name,
+                                                          topic_name,
+                                                          self.region, True))
+            except Exception as e:
+                print(f"ERROR ⭕ {self.service_name} :: {e}")
         return results
 
     def test_topics_should_be_encrypted_at_rest_using_aws_kms(self):
@@ -44,20 +50,23 @@ class Service(AWSTesters):
         results = []
         for topic_arn in self.list_topics:
             topic_name = str(topic_arn).split(f"{self.account_id}:")[1]
-            topic_attributes = self.sns_client.get_topic_attributes(TopicArn=topic_arn)
-            if "Attributes" in topic_attributes:
-                cur_topic_attributes = topic_attributes["Attributes"]
-                if "KmsMasterKeyId" in cur_topic_attributes:
-                    results.append(self._generate_results(self.execution_id,
-                                                          self.account_id, self.service_name, test_name,
-                                                          topic_name,
-                                                          self.region, False,
-                                                          {"kmd_key_id": cur_topic_attributes["KmsMasterKeyId"]}))
-                else:
-                    results.append(self._generate_results(self.execution_id,
-                                                          self.account_id, self.service_name, test_name,
-                                                          topic_name,
-                                                          self.region, True))
+            try:
+                topic_attributes = self.sns_client.get_topic_attributes(TopicArn=topic_arn)
+                if "Attributes" in topic_attributes:
+                    cur_topic_attributes = topic_attributes["Attributes"]
+                    if "KmsMasterKeyId" in cur_topic_attributes:
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name,
+                                                              topic_name,
+                                                              self.region, False,
+                                                              {"kmd_key_id": cur_topic_attributes["KmsMasterKeyId"]}))
+                    else:
+                        results.append(self._generate_results(self.execution_id,
+                                                              self.account_id, self.service_name, test_name,
+                                                              topic_name,
+                                                              self.region, True))
+            except Exception as e:
+                print(f"ERROR ⭕ {self.service_name} :: {e}")
         return results
 
     def test_topic_access_policies_should_not_allow_public_access(self):
@@ -66,11 +75,11 @@ class Service(AWSTesters):
         results = []
         for topic_arn in self.list_topics:
             topic_name = str(topic_arn).split(f"{self.account_id}:")[1]
-            topic_attributes = self.sns_client.get_topic_attributes(TopicArn=topic_arn)
-            if "Attributes" in topic_attributes:
-                cur_topic_attributes = topic_attributes["Attributes"]
-                if "Policy" in cur_topic_attributes:
-                    try:
+            try:
+                topic_attributes = self.sns_client.get_topic_attributes(TopicArn=topic_arn)
+                if "Attributes" in topic_attributes:
+                    cur_topic_attributes = topic_attributes["Attributes"]
+                    if "Policy" in cur_topic_attributes:
                         topic_policy_statements = json.loads(cur_topic_attributes["Policy"])["Statement"]
                         principal_is_public = False
                         valid_condition = None
@@ -99,9 +108,9 @@ class Service(AWSTesters):
                                                                   self.account_id, self.service_name, test_name,
                                                                   topic_name,
                                                                   self.region, False))
+            except Exception as e:
+                print(f"ERROR ⭕ {self.service_name} :: {e}")
 
-                    except json.JSONDecodeError as e:
-                        print(f"ERROR ⭕️ {self.service_name} :: {e}")
 
         return results
 
