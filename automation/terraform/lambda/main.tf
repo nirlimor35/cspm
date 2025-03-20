@@ -1,6 +1,5 @@
 provider "aws" {
   region  = var.aws_region_for_lambda
-  profile = "external-test"
 }
 
 data "aws_iam_policy" "AWSLambdaBasicExecutionRole" {
