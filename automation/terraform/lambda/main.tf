@@ -40,7 +40,7 @@ variable "aws_services_list" {
 resource "aws_lambda_function" "this" {
   function_name = "CSPM"
   role          = aws_iam_role.this.arn
-  filename      = "code/code.zip"
+  filename      = "../code/code.zip"
   runtime       = "python3.13"
   handler       = "cspm.lambda_handler"
   timeout       = 900
@@ -60,7 +60,7 @@ resource "aws_lambda_function" "this" {
 }
 resource "aws_lambda_layer_version" "this" {
   layer_name          = "cspm-python3-13"
-  filename            = "code/layer.zip"
+  filename            = "../code/layer.zip"
   compatible_runtimes = ["python3.13"]
 }
 resource "aws_iam_role" "this" {
