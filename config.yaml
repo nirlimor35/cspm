@@ -1,0 +1,9 @@
+#AWS_PROFILE: external-test
+PLATFORM: coralogix
+CX_ENDPOINT: AP1
+CX_API_KEY: cxtp_iTZ...
+AWS_REGIONS:
+  - eu-west-1
+AWS_SERVICES:
+  - ec2
+  - ecr

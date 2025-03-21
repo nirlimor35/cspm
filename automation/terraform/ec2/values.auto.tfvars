@@ -9,5 +9,12 @@ security_group_id = ""
 platform           = "coralogix"
 coralogix_endpoint = "EU1"
 coralogix_api_key  = "229254e4-..."
-aws_region_list    = ""
-aws_services_list  = ""
+# Leave lists empty for ALL values ->
+aws_region_list    = [
+  "eu-west-1",
+  "us-east-1"
+]
+aws_services_list  = [
+  "ec2",
+  "vpc"
+]

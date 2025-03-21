@@ -1,4 +1,5 @@
 import os
+import yaml
 import uuid
 import pkgutil
 import importlib
@@ -11,22 +12,45 @@ from utils.coralogix import SendToCoralogix
 
 class CSPM:
     def __init__(self):
-        self.platform = os.getenv("PLATFORM")
-        self.cx_endpoint = self.coralogix_endpoint_convert(os.getenv("CX_ENDPOINT", "EU1"))
-        self.cx_api_key = os.getenv("CX_API_KEY")
         self.code_dir = os.path.dirname(__file__)
+        self.config_file_path = os.path.join(self.code_dir, "config.yaml")
+        self.platform = self.parameters_validator("PLATFORM")
+        self.cx_endpoint = self.coralogix_endpoint_convert(self.parameters_validator("CX_ENDPOINT"))
+        self.cx_api_key = self.parameters_validator("CX_API_KEY")
         self.cloud_provider = providers.get_cloud_provider()
-        self.profile = os.getenv("AWS_PROFILE")
+        self.profile = self.parameters_validator("AWS_PROFILE")
+        self.aws_regions_to_scan = self.parameters_validator("AWS_REGIONS")
+        self.user_selected_services = self.parameters_validator("AWS_SERVICES")
+
+    def parameters_validator(self, param):
+        config_file = self.config_file_path
+        if os.path.isfile(config_file):
+            with open(config_file, 'r') as file:
+                config_file = yaml.safe_load(file.read())
+            try:
+                if param in config_file \
+                        and config_file[param] \
+                        and len(config_file[param]) > 0:
+                    return config_file[param]
+                else:
+                    os.getenv(param)
+            except:
+                return None
+        else:
+            return os.getenv(param)
 
     def init_aws(self):
         aws = AWS(profile=self.profile)
         client = aws.get_client
-
-        aws_regions_env = os.getenv("AWS_REGIONS")
-        if aws_regions_env and len(aws_regions_env) > 0:
-            regions = [region.strip() for region in aws_regions_env.split(",")]
-        else:
-            regions = aws.get_available_regions(client=client)
+        regions = None
+        aws_regions = self.aws_regions_to_scan
+        if type(aws_regions) is str:
+            if aws_regions and len(aws_regions) > 0:
+                regions = [region.strip() for region in aws_regions.split(",")]
+            else:
+                regions = aws.get_available_regions(client=client)
+        elif type(aws_regions) is list:
+            regions = aws_regions
         if "global" not in regions:
             regions.append("global")
         account_id = client("sts").get_caller_identity()["Account"]
@@ -43,10 +67,12 @@ class CSPM:
                 service_class = getattr(module_to_load, 'Service')
                 return service_class
 
-        user_selected_services_env = os.getenv("AWS_SERVICES")
-        if user_selected_services_env and len(user_selected_services_env) > 0:
-            user_selected_services = [service.strip().lower() for service in user_selected_services_env.split(",")]
-
+        user_selected_services_env = self.user_selected_services
+        if type(user_selected_services_env) is str:
+            if user_selected_services_env and len(user_selected_services_env) > 0:
+                user_selected_services = [service.strip().lower() for service in user_selected_services_env.split(",")]
+        elif type(user_selected_services_env) is list:
+            user_selected_services = self.user_selected_services
         for finder, module_name, is_pkg in pkgutil.iter_modules([testers_dir]):
             all_services.update({module_name: f"providers.{self.cloud_provider}.testers.{module_name}"})
 
@@ -81,6 +107,8 @@ class CSPM:
             return "coralogixsg.com"
         elif endpoint == "AP3":
             return "ap3.coralogix.com"
+        else:
+            return "coralogix.com"
 
     @staticmethod
     def run_service(current_execution_id: str, service_class, client, account_id: str, region: str, shipper: SendToCoralogix):

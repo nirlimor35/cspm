@@ -53,14 +53,19 @@ variable "coralogix_api_key" {
   description = "Coralogix send-your-data key"
 }
 variable "aws_region_list" {
-  type        = string
-  default     = ""
-  description = "Comma separated list of regions to scan (leave empty for all regions)"
+  type        = list(string)
+  default     = []
+  description = "List of regions to scan (leave empty for all regions)"
 }
 variable "aws_services_list" {
-  type        = string
-  default     = ""
-  description = "Comma separated list of services to scan (leave empty for all services)"
+  type        = list(string)
+  default     = []
+  description = "List of services to scan (leave empty for all services)"
+}
+variable "additional_tags" {
+  type        = map(string)
+  default = {}
+  description = "Any additional tags to add to all resources (do not use the 'Name' key)"
 }
 
 data "aws_ami" "ubuntu" {
@@ -97,7 +102,7 @@ data "http" "external-ip-address" {
 }
 
 locals {
-  docker_install         = <<EOF
+  docker_install = <<EOF
 apt update
 apt-get remove docker docker-engine docker.io containerd runc
 apt-get install ca-certificates curl gnupg lsb-release -y
@@ -109,17 +114,10 @@ apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin -y
 usermod -aG docker ubuntu
 newgrp docker
 EOF
-  docker_command_in_cron = join("", [
-    "crontab -l | { cat; echo \"*/10 * * * * docker rm snowbit-cspm ; ",
-    "docker rmi coralogixrepo/snowbit-cspm ; ",
-    "docker run --name snowbit-cspm -d ",
-    "-e CLOUD_PROVIDER=aws ",
-    "-e PLATFORM=${var.platform} ",
-    "-e CX_ENDPOINT=${var.coralogix_endpoint} ",
-    "-e CX_API_KEY=${var.coralogix_api_key} ",
-    "-e AWS_REGIONS=${var.aws_region_list} ",
-    "-e AWS_SERVICES=${var.aws_services_list} ",
-    "-v /var/run/docker.sock:/var/run/docker.sock coralogixrepo/snowbit-cspm\"; } | crontab -"
+  set_cron       = join("", [
+    "crontab -l | { cat; echo \"0 12 * * * ",
+    "python3 /home/ubuntu/cspm/cspm.py",
+    "\"; } | crontab -"
   ]
   )
   security_group_rules = {
@@ -179,16 +177,26 @@ mkdir /home/ubuntu/cspm
 unzip /home/ubuntu/code.zip -d /home/ubuntu/cspm/
 rm /home/ubuntu/code.zip
 
+echo "PLATFORM: ${var.platform}" > /home/ubuntu/cspm/config.yaml
+echo "CX_ENDPOINT: ${var.coralogix_endpoint}" >> /home/ubuntu/cspm/config.yaml
+echo "CX_API_KEY: ${var.coralogix_api_key}" >> /home/ubuntu/cspm/config.yaml
+echo "AWS_REGIONS: ${jsonencode(var.aws_region_list)}" >> /home/ubuntu/cspm/config.yaml
+echo "AWS_SERVICES: ${jsonencode(var.aws_services_list)}" >> /home/ubuntu/cspm/config.yaml
+
 ${local.docker_install}
+${local.set_cron}
 EOF
-  tags = {
-    Name = "CSPM"
-  }
+  tags      = merge(var.additional_tags,
+    {
+      Name = "CSPM"
+    }
+  )
 }
 resource "aws_security_group" "this" {
   count  = length(var.security_group_id) > 0 ? 0 : 1
   name   = "CSPM"
   vpc_id = data.aws_subnet.this.vpc_id
+  tags = var.additional_tags
 }
 resource "aws_security_group_rule" "this" {
   for_each          = length(var.security_group_id) > 0 ? {} : local.security_group_rules
@@ -202,6 +210,7 @@ resource "aws_security_group_rule" "this" {
 resource "aws_iam_instance_profile" "this" {
   name = "CSPM-Instance-Profile"
   role = aws_iam_role.this.name
+  tags = var.additional_tags
 }
 resource "aws_iam_role" "this" {
   name               = "CSPM-Role"
@@ -217,6 +226,7 @@ resource "aws_iam_role" "this" {
       }
     ]
   })
+  tags = var.additional_tags
 }
 resource "aws_iam_policy" "policy" {
   name        = "cspm_policy"
@@ -283,7 +293,6 @@ resource "aws_iam_policy" "policy" {
 resource "aws_iam_policy_attachment" "this" {
   name       = "cspm-policy-to-role-attachment"
   policy_arn = aws_iam_policy.policy.arn
-
   roles = [aws_iam_role.this.name]
 }
 
