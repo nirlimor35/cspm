@@ -67,6 +67,11 @@ variable "additional_tags" {
   default = {}
   description = "Any additional tags to add to all resources (do not use the 'Name' key)"
 }
+variable "cspm_run_frequency" {
+  type        = number
+  default     = 12
+  description = "What is the interval the CSPM should run in hours"
+}
 
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -103,7 +108,6 @@ data "http" "external-ip-address" {
 
 locals {
   docker_install = <<EOF
-apt update
 apt-get remove docker docker-engine docker.io containerd runc
 apt-get install ca-certificates curl gnupg lsb-release -y
 mkdir -p /etc/apt/keyrings
@@ -114,12 +118,6 @@ apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin -y
 usermod -aG docker ubuntu
 newgrp docker
 EOF
-  set_cron       = join("", [
-    "crontab -l | { cat; echo \"0 12 * * * ",
-    "python3 /home/ubuntu/cspm/cspm.py",
-    "\"; } | crontab -"
-  ]
-  )
   security_group_rules = {
     ingress_1 = {
       type        = "ingress"
@@ -184,7 +182,7 @@ echo "AWS_REGIONS: ${jsonencode(var.aws_region_list)}" >> /home/ubuntu/cspm/conf
 echo "AWS_SERVICES: ${jsonencode(var.aws_services_list)}" >> /home/ubuntu/cspm/config.yaml
 
 ${local.docker_install}
-${local.set_cron}
+crontab -l | { cat; echo \"0 ${var.cspm_run_frequency} * * * python3 /home/ubuntu/cspm/cspm.py \"; } | crontab -
 EOF
   tags      = merge(var.additional_tags,
     {
@@ -196,7 +194,7 @@ resource "aws_security_group" "this" {
   count  = length(var.security_group_id) > 0 ? 0 : 1
   name   = "CSPM"
   vpc_id = data.aws_subnet.this.vpc_id
-  tags = var.additional_tags
+  tags   = var.additional_tags
 }
 resource "aws_security_group_rule" "this" {
   for_each          = length(var.security_group_id) > 0 ? {} : local.security_group_rules
@@ -293,7 +291,7 @@ resource "aws_iam_policy" "policy" {
 resource "aws_iam_policy_attachment" "this" {
   name       = "cspm-policy-to-role-attachment"
   policy_arn = aws_iam_policy.policy.arn
-  roles = [aws_iam_role.this.name]
+  roles      = [aws_iam_role.this.name]
 }
 
 output "Instance-Address" {

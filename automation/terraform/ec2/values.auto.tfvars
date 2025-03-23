@@ -9,6 +9,7 @@ security_group_id = ""
 platform           = "coralogix"
 coralogix_endpoint = "EU1"
 coralogix_api_key  = "229254e4-..."
+cspm_run_frequency = 12
 # Leave lists empty for ALL values ->
 aws_region_list    = [
   "eu-west-1",
