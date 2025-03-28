@@ -36,6 +36,11 @@ variable "aws_services_list" {
   default     = ""
   description = "Comma separated list of services to scan (leave empty for all services)"
 }
+variable "cspm_run_frequency" {
+  type        = number
+  default     = 12
+  description = "What is the interval the CSPM should run in hours"
+}
 
 resource "aws_lambda_function" "this" {
   function_name = "CSPM"
@@ -150,4 +155,19 @@ resource "aws_iam_policy_attachment" "AWSLambdaBasicExecutionRole" {
   roles      = [aws_iam_role.this.name]
   policy_arn = data.aws_iam_policy.AWSLambdaBasicExecutionRole.arn
   name       = data.aws_iam_policy.AWSLambdaBasicExecutionRole.name
+}
+resource "aws_lambda_permission" "eventbridge-lambda-invoke" {
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.this.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.scheduler.arn
+}
+resource "aws_cloudwatch_event_rule" "scheduler" {
+  name                = "lambda-updater-for-eks-shipping"
+  schedule_expression = "rate(${var.cspm_run_frequency} hours)"
+}
+resource "aws_cloudwatch_event_target" "scheduler-target" {
+  arn       = aws_lambda_function.this.arn
+  rule      = aws_cloudwatch_event_rule.scheduler.name
+  target_id = "lambda-eks-scheduler-target"
 }

@@ -26,7 +26,7 @@ Set up the following policy in AWS
       "Effect": "Allow",
       "Action": [
         "autoscaling:DescribeAutoScalingGroups",
-        "autoscaling:DescribeLaunchConfigurations"
+        "autoscaling:DescribeLaunchConfigurations",
         "cloudtrail:ListTags",
         "cloudtrail:GetTrailStatus",
         "cloudtrail:GetEventSelectors",
@@ -45,7 +45,7 @@ Set up the following policy in AWS
         "ecr:DescribeRepositories",
         "ecr:GetLifecyclePolicy",
         "ecr:GetRegistryScanningConfiguration",
-        "ecr:GetAuthorizationToken"
+        "ecr:GetAuthorizationToken",
         "guardduty:ListDetectors",
         "guardduty:GetDetector",
         "iam:GetAccountPasswordPolicy",
@@ -69,7 +69,7 @@ Set up the following policy in AWS
         "secretsmanager:ListSecrets",
         "sns:ListTagsForResource",
         "sns:ListTopics",
-        "sns:GetTopicAttributes",
+        "sns:GetTopicAttributes"
       ],
       "Resource": "*"
     }
@@ -78,6 +78,7 @@ Set up the following policy in AWS
 ```
 
 ## Usage
+### As a container
 Build the image
 ```shell
 docker build -t cspm .
@@ -98,3 +99,36 @@ docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
   cspm
 ```
+
+### Terraform
+Under the `automation` directory you can find two ready-made Terraform documents for deploying usig
+* EC2 machine
+* Lambda function
+
+Both options have a value file to fill the required data
+Initialize terraform 
+```bash
+terraform init
+```
+Apply the run and review before deploying
+```bash
+terraform apply
+```
+
+After reviewing the resources to be added type "yes" in the prompted terminal and wait for the deployment to finish
+
+Both deployments are contentious, and will run automatically in the interval of you choosing where the default is 12 hours
+
+Common resources:
+- Role
+- Policy
+
+EC2 resources:
+- EC2 instance
+- Instance profile
+- Security group (when non was provided)
+- Upon deployment, The stack will output the instances public IP (if `grant_public_ip_address` variable is set to `true` which is the default)
+
+Lambda resources:
+- Lambda function
+- EventBridge rule for automating the trigger
