@@ -12,7 +12,7 @@ Currently covering
 * sns
 * vpc
 
-With a total of 77 unique tests 
+With a total of 82 unique tests 
 
 The current output can potentially vary, currently only supports Coralogix.  
 ## Prerequisites 

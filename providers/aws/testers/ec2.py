@@ -9,17 +9,11 @@ EC2 Client VPN endpoints should have client connection logging enabled
 EC2 VPN connections should have logging enabled
 EC2 Transit Gateways should not automatically accept VPC attachment requests
 EC2 VPC Block Public Access settings should block internet gateway traffic
-
-EC2 instances should use Instance Metadata Service Version 2 (IMDSv2)
 EC2 launch templates should not assign public IPs to network interfaces
 EC2 paravirtual instance types should not be used
-EC2 security groups should not allow ingress from 0.0.0.0/0 to remote server administration ports
-EC2 security groups should not allow ingress from ::/0 to remote server administration ports
-EC2 subnets should not automatically assign public IP addresses
 EC2 transit gateway attachments should be tagged
 EC2 transit gateway route tables should be tagged
 EC2 transit gateways should be tagged
-EC2 volumes should be tagged
 Stopped EC2 instances should be removed after a specified time period
 """
 
@@ -37,6 +31,7 @@ class Service(AWSTesters):
         self.describe_instances = None
         self.describe_autoscaling_groups = None
         self.describe_security_groups = None
+        self.describe_subnets = None
 
     def _init_ec2(self):
         try:
@@ -55,6 +50,10 @@ class Service(AWSTesters):
             describe_security_groups = self.ec2_client.describe_security_groups()
             if "SecurityGroups" in describe_security_groups:
                 self.describe_security_groups = describe_security_groups["SecurityGroups"]
+
+            describe_subnets = self.ec2_client.describe_subnets()
+            if "Subnets" in describe_subnets:
+                self.describe_subnets = describe_subnets["Subnets"]
 
         except Exception as e:
             print(f"ERROR ⭕️ {self.service_name} :: {e}")
@@ -355,6 +354,121 @@ class Service(AWSTesters):
                                                           self.account_id, self.service_name, test_name,
                                                           cur_instance_id,
                                                           self.region, False, additional_data))
+        return results
+
+    def test_volumes_should_be_tagged(self):
+        test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
+
+        results = []
+        volumes = self.ec2_client.describe_volumes()
+        if "Volumes" in volumes and len(volumes["Volumes"]) > 0:
+            for volume in volumes["Volumes"]:
+                cur_volume_id = volume["VolumeId"]
+                attachments = json.loads(json.dumps(volume["Attachments"] if "Attachments" in volume else [], default=str))
+                tags = json.loads(json.dumps(volume["Tags"] if "Tags" in volume else [], default=str))
+                additional_data = {"attachments": attachments,
+                                   "tags": tags}
+                if "Tags" in volume and len(volume["Tags"]) > 0:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name,
+                                                          cur_volume_id,
+                                                          self.region, False, additional_data))
+                else:
+                    results.append(self._generate_results(self.execution_id,
+                                                          self.account_id, self.service_name, test_name,
+                                                          cur_volume_id,
+                                                          self.region, True, additional_data))
+        return results
+
+    def _security_protocol_validator(self, ports: list, ipv: int, protocol: str, test_name: str):
+        results = []
+        server_administration_ports = ports
+        for security_group in self.describe_security_groups:
+            security_group_id = security_group["GroupId"]
+            issue_found_for_sg = False
+            additional_data = {"rules": []}
+            if "IpPermissions" in security_group and len(security_group["IpPermissions"]) > 0:
+                for security_group_rule in security_group["IpPermissions"]:
+                    current_protocol = security_group_rule["IpProtocol"]
+                    current_from_port = security_group_rule["FromPort"] if "FromPort" in security_group_rule else 0
+                    current_to_port = security_group_rule["ToPort"] if "ToPort" in security_group_rule else 0
+
+                    if ipv == 4:
+                        current_ip_ranges = security_group_rule["IpRanges"]
+                        cidr_obj = {"CidrIp": "0.0.0.0/0"}
+                    else:
+                        current_ip_ranges = security_group_rule["Ipv6Ranges"]
+                        cidr_obj = {"CidrIpv6": "::/0"}
+
+                    additional_data["rules"].append(security_group_rule)
+
+                    if current_protocol == protocol and \
+                            current_from_port in server_administration_ports and \
+                            current_to_port in server_administration_ports and \
+                            cidr_obj in current_ip_ranges:
+                        issue_found_for_sg = True
+
+            if issue_found_for_sg:
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name,
+                                                      security_group_id,
+                                                      self.region, True, additional_data))
+            else:
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name,
+                                                      security_group_id,
+                                                      self.region, False, additional_data))
+        return results
+
+    def test_security_groups_should_not_allow_ingress_from_any_ipv4_to_remote_server_administration_ports(self):
+        test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
+        return self._security_protocol_validator([22, 3389], 4, "tcp", test_name)
+
+    def test_security_groups_should_not_allow_ingress_from_any_ipv6_to_remote_server_administration_ports(self):
+        test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
+        return self._security_protocol_validator([22, 3389], 6, "tcp", test_name)
+
+    def test_subnets_should_not_automatically_assign_public_ip_addresses(self):
+        test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
+
+        results = []
+        for subnet in self.describe_subnets:
+            subnet_id = subnet["SubnetId"]
+            additional_data = {"subnet_name": ""}
+            if "Tags" in subnet:
+                for tag in subnet["Tags"]:
+                    if tag["Key"] == "Name":
+                        additional_data["subnet_name"] = tag["Value"]
+            if "MapPublicIpOnLaunch" in subnet and subnet["MapPublicIpOnLaunch"]:
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name,
+                                                      subnet_id,
+                                                      self.region, True, additional_data))
+            else:
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name,
+                                                      subnet_id,
+                                                      self.region, False, additional_data))
+        return results
+
+    def test_instances_should_use_instance_metadata_service_version_2(self):
+        test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
+
+        results = []
+        for instance in self.describe_instances:
+            cur_instance_id = instance["InstanceId"]
+            additional_data = {"metadata_options": instance["MetadataOptions"]}
+
+            if "MetadataOptions" in instance and \
+                    instance["MetadataOptions"]["HttpTokens"] == "required" and \
+                    instance["MetadataOptions"]["HttpPutResponseHopLimit"] == 2:
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name,
+                                                      cur_instance_id, self.region, False, additional_data))
+            else:
+                results.append(self._generate_results(self.execution_id,
+                                                      self.account_id, self.service_name, test_name,
+                                                      cur_instance_id, self.region, True, additional_data))
         return results
 
     def run(self):

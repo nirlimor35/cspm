@@ -98,14 +98,6 @@ class Service(AWSTesters):
                                                               additional_data))
         return results
 
-    @staticmethod
-    def _datetime_handler(obj):
-        from datetime import datetime, timezone
-
-        if isinstance(obj, datetime):
-            return obj.astimezone(timezone.utc).isoformat()
-        raise TypeError(f"Type {type(obj)} not serializable")
-
     def test_guardduty_should_be_enabled(self):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 

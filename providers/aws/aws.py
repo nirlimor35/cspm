@@ -36,6 +36,14 @@ class AWSTesters:
             "additional_data": {} if additional_data is None else additional_data
         }
 
+    @staticmethod
+    def _datetime_handler(obj):
+        from datetime import datetime, timezone
+
+        if isinstance(obj, datetime):
+            return obj.astimezone(timezone.utc).isoformat()
+        raise TypeError(f"Type {type(obj)} not serializable")
+
     def _get_all_tests(self):
         global_tests = list()
         regional_tests = list()
@@ -65,9 +73,9 @@ class AWSTesters:
                 except Exception as e:
                     print(e)
             if results and len(results) > 0:
-                # print(json.dumps(results, indent=2))
+                print(json.dumps(results, indent=2))
                 print(f" INFO 🔵 {service_name} :: Sending {len(results)} logs to Coralogix for {region} region")
-                shipper(results)
+                # shipper(results)
             else:
                 pass
                 # print(f" INFO 🔵 {service_name} :: No logs found for {region}")
