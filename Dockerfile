@@ -1,22 +1,31 @@
-FROM ubuntu:noble
-#FROM python:3.13-alpine
+FROM python:3.13-slim
 
-RUN apt-get update -y
-RUN apt-get install pip curl -y
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /cspm
-COPY providers cspm/providers/
-COPY utils cspm/utils/
-COPY ./cspm.py /cspm
-COPY ./main.py /cspm
-COPY ./requirements.txt /cspm
-
-RUN pip3 install -r /cspm/requirements.txt --break-system-packages
-# Installing grype ->
-RUN curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
-RUN chmod +x /cspm/utils/docker_install.sh
-RUN ./cspm/utils/docker_install.sh
 WORKDIR /cspm
-RUN chmod +x /cspm/cspm.py
 
-CMD ["python3", "/cspm/cspm.py"]
+COPY providers/ providers/
+COPY utils/ utils/
+COPY cspm.py .
+COPY main.py .
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt --break-system-packages && \
+    curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin && \
+    chmod +x utils/docker_install.sh && \
+    ./utils/docker_install.sh && \
+    chmod +x cspm.py
+
+RUN useradd -m cspm && \
+    groupadd -f docker && \
+    usermod -aG docker cspm && \
+    chown -R cspm:cspm /cspm
+
+USER cspm
+
+CMD ["python3", "cspm.py"]

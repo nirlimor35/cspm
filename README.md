@@ -92,17 +92,25 @@ docker run --rm \
   -e CLOUD_PROVIDER="aws" \
   -e PLATFORM=coralogix \
   -e CX_ENDPOINT=EU1 \
-  -e CX_API_KEY=123 \
+  -e CX_API_KEY=123... \
   -e AWS_REGIONS= \
   -e AWS_SERVICES= \
   --network host \
   -v ~/.aws:/root/.aws \
+  --group-add $(stat -c '%g' /var/run/docker.sock) \
   -v /var/run/docker.sock:/var/run/docker.sock \
   cspm
 ```
 
+#### Command explanation
+* --network host is set to use the hosts network card instead of isolating the container completely
+* -v ~/.aws:/root/.aws is set in case you are using local credentials. remove if not needed
+* For scanning ECR containers
+  * --group-add $(stat -c '%g' /var/run/docker.sock) is set to align the docker group ID on both the container and the host
+  * -v /var/run/docker.sock:/var/run/docker.sock is the mapping of the unix socket file itself in order to use the docker service inside the container as if it is running from the host
+
 ### Terraform
-Under the `automation` directory you can find two ready-made Terraform documents for deploying usig
+Under the `automation` directory you can find two ready-made Terraform documents for deploying using
 * EC2 machine
 * Lambda function
 

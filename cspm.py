@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.13
+#!/usr/local/bin/python3
 import os
 from main import CSPM
 
