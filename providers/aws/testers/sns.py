@@ -1,9 +1,9 @@
 import json
 import inspect
-from providers.aws.aws import AWSTesters
+from providers import Testers
 
 
-class Service(AWSTesters):
+class Service(Testers):
     def __init__(self, execution_id, client, account_id, region, shipper):
         self.service_name = "SNS"
         self.execution_id = execution_id

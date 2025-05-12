@@ -1,10 +1,10 @@
 import json
 import inspect
-from providers.aws.aws import AWSTesters
+from providers import Testers
 from botocore.exceptions import ClientError
 
 
-class Service(AWSTesters):
+class Service(Testers):
     def __init__(self, execution_id, client, account_id, region, shipper):
         self.execution_id = execution_id
         self.service_name = "CloudTrail"

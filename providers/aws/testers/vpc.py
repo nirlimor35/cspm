@@ -1,5 +1,5 @@
 import inspect
-from providers.aws.aws import AWSTesters
+from providers import Testers
 
 """
 VPC subnets should be tagged
@@ -14,7 +14,7 @@ EC2 VPN gateways should be tagged
 """
 
 
-class Service(AWSTesters):
+class Service(Testers):
     def __init__(self, execution_id, client, account_id, region, shipper):
         self.service_name = "VPC"
         self.execution_id = execution_id

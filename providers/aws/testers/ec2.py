@@ -1,7 +1,7 @@
 import inspect
 import json
 
-from providers.aws.aws import AWSTesters
+from providers import Testers
 
 """
 Amazon EC2 should be configured to use VPC endpoints that are created for the Amazon EC2 service
@@ -18,7 +18,7 @@ Stopped EC2 instances should be removed after a specified time period
 """
 
 
-class Service(AWSTesters):
+class Service(Testers):
     def __init__(self, execution_id, client, account_id, region, shipper):
         self.execution_id = execution_id
         self.service_name = "EC2"
