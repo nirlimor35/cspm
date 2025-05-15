@@ -212,6 +212,7 @@ class CSPM:
                         future_to_task[future] = (cur_service_name, region)
 
                 elif self.cloud_provider == "gcp":
+                    os.environ["GRPC_VERBOSITY"] = "ERROR"
                     credentials, project_id, regions = self.init_gcp()
                     for region in regions:
                         future = executor.submit(
