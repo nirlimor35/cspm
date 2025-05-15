@@ -83,7 +83,6 @@ class CSPM:
             regions.append("global")
         return credentials, project_id, regions
 
-
     def load_services_for_provider(self):
         services = []
         all_services = {}
@@ -141,7 +140,8 @@ class CSPM:
             return "coralogix.com"
 
     @staticmethod
-    def run_aws_service(current_execution_id: str, service_class, client, account_id: str, region: str, shipper: SendToCoralogix):
+    def run_aws_service(current_execution_id: str, service_class, client, account_id: str, region: str,
+                        shipper: SendToCoralogix):
         service_class(
             execution_id=current_execution_id,
             client=client,
@@ -175,7 +175,8 @@ class CSPM:
             for service_class in discovered_services:
                 cur_service_name = str(service_class).split(".")[3].upper()
 
-                special_names = ["CloudTrail", "GuardDuty", "Route53", "Secret Manager", "Cloud Storage", "Logging"]
+                special_names = ["CloudTrail", "GuardDuty", "Route53", "Secret Manager", "Cloud Storage", "Logging",
+                                 "Compute Engine"]
                 for special_name in special_names:
                     if cur_service_name == special_name.upper().replace(" ", "_"):
                         cur_service_name = special_name

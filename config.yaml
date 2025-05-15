@@ -1,4 +1,4 @@
-AWS_PROFILE: external-test
+#AWS_PROFILE: external-test
 PLATFORM: coralogix
 CX_ENDPOINT: AP1
 CLOUD_PROVIDER: GCP
@@ -8,4 +8,5 @@ REGIONS:
 SERVICES:
 #  - ec2
 #  - test
-  - logging
+#  - logging
+  - compute_engine
