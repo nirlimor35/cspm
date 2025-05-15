@@ -14,14 +14,9 @@ class Service(Testers):
         self.log_client = MetricsServiceV2Client(credentials=credentials)
         self.monitoring_client = monitoring_v3.AlertPolicyServiceClient(credentials=credentials)
 
-    @staticmethod
-    def _log_metric_exists(client, project_id):
-        EXPECTED_FILTER = (
-            'resource.type="gcs_bucket" '
-            'protoPayload.methodName:("SetIamPolicy" OR "SetBucketIamPolicy" OR "storage.setIamPermissions")'
-        )
-        for metric in client.list_log_metrics(parent=f"projects/{project_id}"):
-            if EXPECTED_FILTER in metric.filter:
+    def _log_metric_exists(self, client, filter_to_check):
+        for metric in client.list_log_metrics(parent=f"projects/{self.project_id}"):
+            if filter_to_check in metric.filter:
                 return metric.name
         return None
 
@@ -39,7 +34,11 @@ class Service(Testers):
         test_name = inspect.currentframe().f_code.co_name.split("test_")[1]
 
         results = []
-        metric_name = self._log_metric_exists(self.log_client, self.project_id)
+        filter_to_check = (
+            'resource.type="gcs_bucket" '
+            'protoPayload.methodName:("SetIamPolicy" OR "SetBucketIamPolicy" OR "storage.setIamPermissions")'
+        )
+        metric_name = self._log_metric_exists(self.log_client, filter_to_check)
         if metric_name:
             alert_exists = self._alerting_policy_exists(self.monitoring_client, self.project_id, metric_name)
             if alert_exists:
