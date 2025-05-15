@@ -2,7 +2,7 @@
 PLATFORM: coralogix
 CX_ENDPOINT: AP1
 CLOUD_PROVIDER: GCP
-CX_API_KEY: cxtp_iTZlQKzeoJ6kcsfmBdNJAVNhuhCuMp
+CX_API_KEY: cxtp_iTZl...
 REGIONS:
 #  - eu-west-1
 SERVICES:
