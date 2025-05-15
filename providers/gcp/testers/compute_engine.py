@@ -7,7 +7,7 @@ class Service(Testers):
     def __init__(self, execution_id, credentials, project_id, region):
         self.service_name = "Compute"
         self.execution_id = execution_id
-        self.project_id = "ilan-project-366012"
+        self.project_id = project_id
         self.region = region
         self.instances_client = compute_v1.InstancesClient(credentials=credentials)
         self.image_client = compute_v1.ImagesClient(credentials=credentials)
