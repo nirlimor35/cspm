@@ -24,12 +24,12 @@ class Service(Testers):
         self.execution_id = execution_id
         self.project_id = project_id
         self.region = region
-        self.shipper = shipper
+        self.shipper = shipper.send_bulk
         self.storage_client = storage.Client(project=project_id, credentials=credentials)
         self.all_bucket = None
 
     def cloud_storage_init(self):
-        all_buckets = self.storage_client.list_buckets()
+        all_buckets = list(self.storage_client.list_buckets())
         self.all_bucket = all_buckets
 
     def global_test_bucket_logging_should_be_enabled(self):

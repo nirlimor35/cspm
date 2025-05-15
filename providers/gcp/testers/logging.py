@@ -10,12 +10,12 @@ class Service(Testers):
         self.execution_id = execution_id
         self.project_id = project_id
         self.region = region
-        self.shipper = shipper
+        self.shipper = shipper.send_bulk
         self.log_client = MetricsServiceV2Client(credentials=credentials)
         self.monitoring_client = monitoring_v3.AlertPolicyServiceClient(credentials=credentials)
 
     def _log_metric_exists(self, client, filter_to_check):
-        for metric in client.list_log_metrics(parent=f"projects/{self.project_id}"):
+        for metric in list(client.list_log_metrics(parent=f"projects/{self.project_id}")):
             if filter_to_check in metric.filter:
                 return metric.name
         return None
@@ -23,7 +23,7 @@ class Service(Testers):
     @staticmethod
     def _alerting_policy_exists(client, project_id, metric_name):
         project_name = f"projects/{project_id}"
-        for policy in client.list_alert_policies(name=project_name):
+        for policy in list(client.list_alert_policies(name=project_name)):
             for condition in policy.conditions:
                 if condition.condition_monitoring_query_language \
                         and metric_name in condition.condition_monitoring_query_language.query:

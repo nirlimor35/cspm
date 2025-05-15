@@ -3,19 +3,20 @@ import requests
 
 
 class SendToCoralogix:
-    def __init__(self, endpoint: str, api_key: str, application: str, subsystem: str):
+    def __init__(self, endpoint: str, api_key: str, application: str, subsystem: str, provider: str):
         self.endpoint = endpoint
         self.api_key = api_key
         self.application = application
         self.subsystem = subsystem
+        self.provider = provider
 
-    @staticmethod
-    def prepare_to_batch_send(logs_array):
+    def prepare_to_batch_send(self, logs_array):
         ready_to_send = {}
         counter = 0
         batch_num = 1
 
         for log in logs_array:
+            log.update({"platform": self.provider})
             if counter < 800:
                 if f"batch_{batch_num}" in ready_to_send:
                     ready_to_send[f"batch_{batch_num}"].append({"severity": 3, "text": log})

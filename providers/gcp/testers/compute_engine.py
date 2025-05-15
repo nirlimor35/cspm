@@ -9,7 +9,7 @@ class Service(Testers):
         self.execution_id = execution_id
         self.project_id = project_id
         self.region = region
-        self.shipper = shipper
+        self.shipper = shipper.send_bulk
         self.instances_client = compute_v1.InstancesClient(credentials=credentials)
         self.image_client = compute_v1.ImagesClient(credentials=credentials)
         self.images = []
@@ -20,7 +20,7 @@ class Service(Testers):
     def compute_images_init(self):
         image_client = compute_v1.ImagesClient()
         request = compute_v1.ListImagesRequest(project=self.project_id)
-        self.images = image_client.list(request=request)
+        self.images = list(image_client.list(request=request))
 
     @staticmethod
     def _is_public_iam(policy, permissions):

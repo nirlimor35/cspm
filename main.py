@@ -171,7 +171,8 @@ class CSPM:
                 endpoint=self.cx_endpoint,
                 api_key=self.cx_api_key,
                 application="CSPM",
-                subsystem=service
+                subsystem=service,
+                provider=self.cloud_provider
             )
 
         return shipper
@@ -194,35 +195,35 @@ class CSPM:
                     if cur_service_name == special_name.upper().replace(" ", "_"):
                         cur_service_name = special_name
 
-            print(f" INFO 🔵 {cur_service_name} :: Initiating...")
+                print(f" INFO 🔵 {cur_service_name} :: Initiating...")
 
-            if self.cloud_provider == "aws":
-                client, regions, account_id = self.init_aws()
-                for region in regions:
-                    future = executor.submit(
-                        self.run_aws_service,
-                        current_execution_id,
-                        service_class,
-                        client,
-                        account_id,
-                        region,
-                        self.get_shipper(cur_service_name)
-                    )
-                    future_to_task[future] = (cur_service_name, region)
+                if self.cloud_provider == "aws":
+                    client, regions, account_id = self.init_aws()
+                    for region in regions:
+                        future = executor.submit(
+                            self.run_aws_service,
+                            current_execution_id,
+                            service_class,
+                            client,
+                            account_id,
+                            region,
+                            self.get_shipper(cur_service_name)
+                        )
+                        future_to_task[future] = (cur_service_name, region)
 
-            elif self.cloud_provider == "gcp":
-                credentials, project_id, regions = self.init_gcp()
-                for region in regions:
-                    future = executor.submit(
-                        self.run_gcp_service,
-                        current_execution_id,
-                        service_class,
-                        credentials,
-                        project_id,
-                        region,
-                        self.get_shipper(cur_service_name)
-                    )
-                    future_to_task[future] = (cur_service_name, region)
+                elif self.cloud_provider == "gcp":
+                    credentials, project_id, regions = self.init_gcp()
+                    for region in regions:
+                        future = executor.submit(
+                            self.run_gcp_service,
+                            current_execution_id,
+                            service_class,
+                            credentials,
+                            project_id,
+                            region,
+                            self.get_shipper(cur_service_name)
+                        )
+                        future_to_task[future] = (cur_service_name, region)
 
         duration = (datetime.now() - start_timestamp).total_seconds()
         print(f"\n✅ Scan completed in {duration} seconds")
