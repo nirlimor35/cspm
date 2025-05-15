@@ -151,17 +151,30 @@ class CSPM:
         ).run()
 
     @staticmethod
-    def run_gcp_service(current_execution_id: str, service_class, credentials, project_id, region):
+    def run_gcp_service(current_execution_id: str, service_class, credentials, project_id, region, shipper):
         service_class(
             execution_id=current_execution_id,
             credentials=credentials,
             project_id=project_id,
-            region=region
+            region=region,
+            shipper=shipper
         ).run()
 
     @staticmethod
     def create_execution_id():
         return str(uuid.uuid4())
+
+    def get_shipper(self, service):
+        shipper = None
+        if self.platform == "coralogix":
+            shipper = SendToCoralogix(
+                endpoint=self.cx_endpoint,
+                api_key=self.cx_api_key,
+                application="CSPM",
+                subsystem=service
+            )
+
+        return shipper
 
     def main(self):
         current_execution_id = self.create_execution_id()
@@ -181,14 +194,6 @@ class CSPM:
                     if cur_service_name == special_name.upper().replace(" ", "_"):
                         cur_service_name = special_name
 
-                if self.platform == "coralogix":
-                    shipper = SendToCoralogix(
-                        endpoint=self.cx_endpoint,
-                        api_key=self.cx_api_key,
-                        application="CSPM",
-                        subsystem=cur_service_name
-                    )
-
             print(f" INFO 🔵 {cur_service_name} :: Initiating...")
 
             if self.cloud_provider == "aws":
@@ -201,7 +206,7 @@ class CSPM:
                         client,
                         account_id,
                         region,
-                        shipper
+                        self.get_shipper(cur_service_name)
                     )
                     future_to_task[future] = (cur_service_name, region)
 
@@ -214,7 +219,8 @@ class CSPM:
                         service_class,
                         credentials,
                         project_id,
-                        region
+                        region,
+                        self.get_shipper(cur_service_name)
                     )
                     future_to_task[future] = (cur_service_name, region)
 

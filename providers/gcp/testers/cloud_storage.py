@@ -19,11 +19,12 @@ Locked retention policy not set
 
 
 class Service(Testers):
-    def __init__(self, execution_id, credentials, project_id, region):
+    def __init__(self, execution_id, credentials, project_id, region, shipper):
         self.service_name = "Cloud Storage"
         self.execution_id = execution_id
         self.project_id = project_id
         self.region = region
+        self.shipper = shipper
         self.storage_client = storage.Client(project=project_id, credentials=credentials)
         self.all_bucket = None
 
@@ -68,4 +69,4 @@ class Service(Testers):
             pass
         if self.region == "global":
             self.cloud_storage_init()
-            self.run_test(self.service_name, global_tests, "", self.region)
+            self.run_test(self.service_name, global_tests, self.shipper, self.region)

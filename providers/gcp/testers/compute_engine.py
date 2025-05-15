@@ -4,11 +4,12 @@ from providers import Testers
 
 
 class Service(Testers):
-    def __init__(self, execution_id, credentials, project_id, region):
+    def __init__(self, execution_id, credentials, project_id, region, shipper):
         self.service_name = "Compute"
         self.execution_id = execution_id
         self.project_id = project_id
         self.region = region
+        self.shipper = shipper
         self.instances_client = compute_v1.InstancesClient(credentials=credentials)
         self.image_client = compute_v1.ImagesClient(credentials=credentials)
         self.images = []
@@ -52,6 +53,6 @@ class Service(Testers):
             # self.compute_instance_init()
         if self.region == "global":
             self.compute_images_init()
-            self.run_test(self.service_name, global_tests, "", self.region)
+            self.run_test(self.service_name, global_tests, self.shipper, self.region)
 
 

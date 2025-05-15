@@ -5,11 +5,12 @@ from google.cloud.logging_v2.services.metrics_service_v2 import MetricsServiceV2
 
 
 class Service(Testers):
-    def __init__(self, execution_id, credentials, project_id, region):
+    def __init__(self, execution_id, credentials, project_id, region, shipper):
         self.service_name = "Logging"
         self.execution_id = execution_id
         self.project_id = project_id
         self.region = region
+        self.shipper = shipper
         self.log_client = MetricsServiceV2Client(credentials=credentials)
         self.monitoring_client = monitoring_v3.AlertPolicyServiceClient(credentials=credentials)
 
@@ -58,4 +59,4 @@ class Service(Testers):
             pass
         if self.region == "global":
             # self.logging_init()
-            self.run_test(self.service_name, global_tests, "", self.region)
+            self.run_test(self.service_name, global_tests, self.shipper, self.region)
