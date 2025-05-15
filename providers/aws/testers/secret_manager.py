@@ -1,9 +1,9 @@
 import inspect
-from providers.aws.aws import AWSTesters
+from providers import Testers
 from datetime import datetime, timezone, timedelta
 
 
-class Service(AWSTesters):
+class Service(Testers):
     def __init__(self, execution_id, client, account_id, region, shipper):
         self.service_name = "Secret Manager"
         self.execution_id = execution_id

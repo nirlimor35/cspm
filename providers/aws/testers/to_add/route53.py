@@ -1,5 +1,5 @@
 import inspect
-from providers.aws.aws import AWSTesters
+from providers import Testers
 
 """
 Route 53 health checks should be tagged
@@ -7,7 +7,7 @@ Route 53 public hosted zones should log DNS queries
 """
 
 
-class Service(AWSTesters):
+class Service(Testers):
     def __init__(self, execution_id, client, account_id, region, shipper):
         self.service_name = "Route53"
         self.execution_id = execution_id

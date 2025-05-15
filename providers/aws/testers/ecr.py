@@ -3,7 +3,7 @@ import docker
 import base64
 import inspect
 import subprocess
-from providers.aws.aws import AWSTesters
+from providers import Testers
 
 """
 ECR repositories should be encrypted with customer managed AWS KMS keys
@@ -11,7 +11,7 @@ ECR public repositories should be tagged
 """
 
 
-class Service(AWSTesters):
+class Service(Testers):
     def __init__(self, execution_id, client, account_id, region, shipper):
         self.service_name = "ECR"
         self.execution_id = execution_id

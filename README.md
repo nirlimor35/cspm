@@ -1,7 +1,7 @@
 # CSPM
-This PoC CSPM is designed to catch a verity of misconfigurations and security exposures in AWS
+This PoC CSPM is designed to catch a verity of misconfigurations and security exposures in AWS and GCP
 
-Currently covering
+AWS Coverage
 * cloudtrail
 * ec2
 * ecr
@@ -12,11 +12,17 @@ Currently covering
 * sns
 * vpc
 
+GCP Coverage
+* Cloud Storage
+* Compute Engine
+* Logging
+
 With a total of 82 unique tests 
 
 The current output can potentially vary, currently only supports Coralogix.  
 ## Prerequisites 
-* For manual deployment - Set up the following policy in AWS 
+### AWS
+* For manual deployment - Set up the following policy 
     ```json
     {
       "Version": "2012-10-17",
@@ -78,6 +84,33 @@ The current output can potentially vary, currently only supports Coralogix.
     ```
 * For Terraform automation, please [install terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
 
+### GCP
+* For permissions, manually create in the GCP platform UI with the following permissions:
+  ```shell
+  compute.images.list
+  logging.logMetrics.list
+  monitoring.alertPolicies.list
+  storage.buckets.list
+  ```
+* Or by using the `gcloud` tool:
+  * create a file named `cspm_permissions.yaml` with the following content
+    ```yaml
+    title: CSPM Role
+    description: A role to grant permissions to the CSPM
+    stage: GA
+    includedPermissions:
+    - compute.images.list
+    - logging.logMetrics.list
+    - monitoring.alertPolicies.list
+    - storage.buckets.list
+      ```
+  * run the command to create the role in you GCP platform
+    ```shell
+    gcloud iam roles create "<ROLE_ID>" \
+    --project="<PROJECT_ID>" \
+    --file=cspm_permissions.yaml
+    ```
+
 ## Usage
 ### As a container
 Build the image
@@ -93,8 +126,8 @@ docker run --rm \
   -e PLATFORM=coralogix \
   -e CX_ENDPOINT=EU1 \
   -e CX_API_KEY=123... \
-  -e AWS_REGIONS= \
-  -e AWS_SERVICES= \
+  -e REGIONS= \
+  -e SERVICES= \
   --network host \
   -v ~/.aws:/cspm/.aws \
   --group-add $(stat -c '%g' /var/run/docker.sock) \

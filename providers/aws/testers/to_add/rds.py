@@ -1,5 +1,5 @@
 import inspect
-from providers.aws.aws import AWSTesters
+from providers import Testers
 
 """
 An RDS event notifications subscription should be configured for critical database parameter group events
@@ -42,7 +42,7 @@ RDS snapshot should be private
 """
 
 
-class Service(AWSTesters):
+class Service(Testers):
     def __init__(self, execution_id, client, account_id, region, shipper):
         self.service_name = "RDS"
         self.execution_id = execution_id
